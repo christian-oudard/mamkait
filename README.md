@@ -1,4 +1,3 @@
-# quijada
 Haskell implementation of John Quijada's newest constructed language
 
 Follow our progress at https://www.reddit.com/r/ithkuil
