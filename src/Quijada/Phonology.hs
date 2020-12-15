@@ -1,61 +1,8 @@
 module Quijada.Phonology where
 
-import Data.Maybe (fromJust)
-
-
---- Phonemic Inventory ---
-
-letterChart :: [(String, Char, Phoneme)]
--- 1. ASCII representation
--- 2. Unicode display character
--- 3. Phoneme classification
-letterChart =
-  -- Consonant
-  [ ("p",  'p', CT Unvoiced Labial Stop)
-  , ("b",  'b', CT Voiced Labial Stop)
-  , ("t",  't', CT Unvoiced ApicoDental Stop)
-  , ("d",  'd', CT Voiced ApicoDental Stop)
-  , ("k",  'k', CT Unvoiced Velar Stop)
-  , ("g",  'g', CT Voiced Velar Stop)
-  , ("'",  '’', CT Unvoiced Glottal Stop)
-  , ("f",  'f', CT Unvoiced LabioDental Fricative)
-  , ("v",  'v', CT Voiced LabioDental Fricative)
-  , ("t,", 'ţ', CT Unvoiced InterDental Fricative)
-  , ("d,", 'ḑ', CT Voiced InterDental Fricative)
-  , ("s",  's', CT Unvoiced ApicoAlveolar Fricative)
-  , ("z",  'z', CT Voiced ApicoAlveolar Fricative)
-  , ("s/", 'š', CT Unvoiced AlveoloPalatal Fricative)
-  , ("z/", 'ž', CT Voiced AlveoloPalatal Fricative)
-  , ("x",  'x', CT Unvoiced Uvular Fricative)
-  , ("h",  'h', CT Unvoiced Glottal Fricative)
-  , ("l,", 'ļ', CT Unvoiced Lateral Fricative)
-  , ("c",  'c', CT Unvoiced ApicoAlveolar Affricative)
-  , ("z.", 'ż', CT Voiced ApicoAlveolar Affricative)
-  , ("c/", 'č', CT Unvoiced AlveoloPalatal Affricative)
-  , ("j",  'j', CT Voiced AlveoloPalatal Affricative)
-  , ("m",  'm', CT Voiced Labial Nasal)
-  , ("n",  'n', CT Voiced ApicoDental Nasal)
-  , ("n/", 'ň', CT Voiced Velar Nasal)
-  , ("r",  'r', CT Voiced AlveolarRetroflex Tap)
-  , ("l",  'l', CT Voiced Lateral Liquid)
-  , ("w",  'w', CT Voiced LabioVelar Approximant)
-  , ("y",  'y', CT Voiced Palatal Approximant)
-  , ("r/", 'ř', CT Voiced Uvular Approximant)
-  -- Vowels
-  , ("i",  'i', VT Unrounded Front High)
-  , ("u;", 'ü', VT Rounded Front High)
-  , ("u",  'u', VT Rounded Back High)
-  , ("e",  'e', VT Unrounded Front Mid)
-  , ("o;", 'ö', VT Rounded Front Mid)
-  , ("e;", 'ë', VT Unrounded Back Mid)
-  , ("o",  'o', VT Rounded Back Mid)
-  , ("a",  'a', VT Unrounded Central Low)
-  , ("a;", 'ä', VT Unrounded Back Low)
-  ]
-
 data Phoneme
-  = CT CVoicedness CPlace CManner
-  | VT VRoundedness VPlace VHeight
+  = C CVoicedness CPlace CManner
+  | V VRoundedness VPlace VHeight
   deriving (Eq, Show)
 
 data CVoicedness = Voiced | Unvoiced
@@ -74,49 +21,100 @@ data VPlace = Front | Central | Back
 data VHeight = High | Mid | Low
   deriving (Eq, Show)
 
-letters :: [String]
-letters = map (\(s, _, _) -> s) letterChart
+--- Phonemic Inventory ---
 
-phoneme :: String -> Maybe Phoneme
-phoneme s = lookup s $ map (\(k, _, p) -> (k, p)) $ letterChart
+phonemeChart :: [(String, Char, Phoneme)]
+-- 1. ASCII representation
+-- 2. Unicode display character
+-- 3. Phoneme classification
+phonemeChart =
+  -- Consonant
+  [ ("p",  'p', C Unvoiced Labial Stop)
+  , ("b",  'b', C Voiced Labial Stop)
+  , ("t",  't', C Unvoiced ApicoDental Stop)
+  , ("d",  'd', C Voiced ApicoDental Stop)
+  , ("k",  'k', C Unvoiced Velar Stop)
+  , ("g",  'g', C Voiced Velar Stop)
+  , ("'",  '’', C Unvoiced Glottal Stop)
+  , ("f",  'f', C Unvoiced LabioDental Fricative)
+  , ("v",  'v', C Voiced LabioDental Fricative)
+  , ("t,", 'ţ', C Unvoiced InterDental Fricative)
+  , ("d,", 'ḑ', C Voiced InterDental Fricative)
+  , ("s",  's', C Unvoiced ApicoAlveolar Fricative)
+  , ("z",  'z', C Voiced ApicoAlveolar Fricative)
+  , ("s/", 'š', C Unvoiced AlveoloPalatal Fricative)
+  , ("z/", 'ž', C Voiced AlveoloPalatal Fricative)
+  , ("x",  'x', C Unvoiced Uvular Fricative)
+  , ("h",  'h', C Unvoiced Glottal Fricative)
+  , ("l,", 'ļ', C Unvoiced Lateral Fricative)
+  , ("c",  'c', C Unvoiced ApicoAlveolar Affricative)
+  , ("z.", 'ẓ', C Voiced ApicoAlveolar Affricative)
+  , ("c/", 'č', C Unvoiced AlveoloPalatal Affricative)
+  , ("j",  'j', C Voiced AlveoloPalatal Affricative)
+  , ("m",  'm', C Voiced Labial Nasal)
+  , ("n",  'n', C Voiced ApicoDental Nasal)
+  , ("n/", 'ň', C Voiced Velar Nasal)
+  , ("r",  'r', C Voiced AlveolarRetroflex Tap)
+  , ("l",  'l', C Voiced Lateral Liquid)
+  , ("w",  'w', C Voiced LabioVelar Approximant)
+  , ("y",  'y', C Voiced Palatal Approximant)
+  , ("r/", 'ř', C Voiced Uvular Approximant)
+  -- Vowels
+  , ("i",  'i', V Unrounded Front High)
+  , ("u;", 'ü', V Rounded Front High)
+  , ("u",  'u', V Rounded Back High)
+  , ("e",  'e', V Unrounded Front Mid)
+  , ("o;", 'ö', V Rounded Front Mid)
+  , ("e;", 'ë', V Unrounded Back Mid)
+  , ("o",  'o', V Rounded Back Mid)
+  , ("a",  'a', V Unrounded Central Low)
+  , ("a;", 'ä', V Unrounded Back Low)
+  ]
 
-chr :: String -> Maybe Char
-chr " " = Just ' '
-chr s = lookup s $ map (\(k, c, _) -> (k, c)) $ letterChart
+consonants :: [Phoneme]
+consonants = filter isConsonant phonemes
+  where isConsonant p = case p of (C _ _ _) -> True; _ -> False
 
-consonants :: [String]
-consonants = filter isConsonant letters
-  where isConsonant s = case phoneme s of Just (CT _ _ _) -> True; _ -> False
+vowels :: [Phoneme]
+vowels = filter isVowel phonemes
+  where isVowel p = case p of (V _ _ _) -> True; _ -> False
 
-vowels :: [String]
-vowels = filter isVowel letters
-  where isVowel s = case phoneme s of Just (VT _ _ _) -> True; _ -> False
+asciiReps :: [String]
+asciiReps = map (\(a, _, _) -> a) phonemeChart 
 
-display :: String -> String
-display s = concatMap chr' $ tokens s
-  where chr' s' = case chr s' of Just c -> [c]; Nothing -> s'
+unicodeChars :: [Char]
+unicodeChars = map (\(_, u, _) -> u) phonemeChart
 
-tokens :: String -> [String]
-tokens (a:b:xs) =
-  if [a, b] `elem` letters
-  then [a, b]:tokens xs
-  else [a]:tokens (b:xs)
-tokens [a] = [[a]]
-tokens [] = []
+phonemes :: [Phoneme]
+phonemes = map (\(_, _, p) -> p) phonemeChart
 
+asciiToPhoneme :: String -> Maybe Phoneme
+asciiToPhoneme a = lookup a (zip asciiReps phonemes)
 
---- Phonotaxis ---
+unicodeToPhoneme :: Char -> Maybe Phoneme
+unicodeToPhoneme a = lookup a (zip unicodeChars phonemes)
 
-isLegalPair :: Phoneme -> Phoneme -> Bool
--- different voicedness, same place, same manner
-isLegalPair (CT Unvoiced m1 p1) (CT Voiced m2 p2)
-  | m1 == m2 && p1 == p2  = False
-  | otherwise  = True
-isLegalPair _ _ = True
--- STUB
+phonemeToAscii :: Phoneme -> Maybe String
+phonemeToAscii p = lookup p (zip phonemes asciiReps)
 
+phonemeToUnicode :: Phoneme -> Maybe Char
+phonemeToUnicode p = lookup p (zip phonemes unicodeChars)
 
---- Pitch ---
+asciiToUnicode :: String -> Maybe Char
+asciiToUnicode a = lookup a (zip asciiReps unicodeChars)
 
-data Pitch = MidTone | RisingTone | FallingTone | RiseFallTone | FallRiseTone | LowTone
-  deriving (Eq, Show)
+unicodeToAscii :: Char -> Maybe String
+unicodeToAscii a = lookup a (zip unicodeChars asciiReps)
+
+convert :: String -> Maybe String
+convert = sequence . (map asciiToUnicode) . tokenize
+  where 
+    tokenize (a:b:xs) =
+      if [a, b] `elem` asciiReps
+      then [a, b]:tokenize xs
+      else [a]:tokenize (b:xs)
+    tokenize [a] = [[a]]
+    tokenize [] = []
+
+deconvert :: String -> Maybe String
+deconvert = fmap concat . sequence . map unicodeToAscii

@@ -11,6 +11,17 @@ library:
   exposed-modules:
   - Quijada.Phonology
 
+tests:
+  spec:
+    main: Test.hs
+    source-dirs:
+      - test
+      - src
+    dependencies:
+      - quijada
+      - tasty
+      - tasty-hunit
+
 ghc-options:
   - -O2
   - -threaded
