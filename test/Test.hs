@@ -10,7 +10,10 @@ suite :: TestTree
 suite = testGroup "test suite" [
     testGroup "unittests"
       [ testCase "unicode characters" $ unicodeChars @=? "pbtdkg’fvţḑszšžxhļcẓčjmnňrlwyřiüueöëoaä"
-      , testCase "convert" $ convert (concat asciiReps) @=? Just unicodeChars
-      , testCase "deconvert" $ deconvert unicodeChars @=? Just (concat asciiReps)
+      , testCase "convert ascii representations" $
+          convert (concat asciiReps) @=? unicodeChars
+      , testCase "convert word" $ convert "male;it,r/ait" @=? "malëiţřait"
+      , testCase "convert word error" $ convert "male:it,r/ait" @=? "male�iţřait"
+      , testCase "deconvert unicode chars" $ deconvert unicodeChars @=? concat asciiReps
       ]
   ]

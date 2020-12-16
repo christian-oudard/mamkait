@@ -3,23 +3,24 @@ module Quijada.Phonology where
 data Phoneme
   = C CVoicedness CPlace CManner
   | V VRoundedness VPlace VHeight
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 
 data CVoicedness = Voiced | Unvoiced
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 data CPlace
   = Labial | LabioDental | LabioVelar | ApicoDental | InterDental | ApicoAlveolar
   | Alveolar | AlveolarRetroflex | AlveoloPalatal | Palatal | Velar | Uvular | Glottal | Lateral
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 data CManner = Stop | Fricative | Affricative | Nasal | Tap | Liquid | Approximant
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 
 data VRoundedness = Rounded | Unrounded
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 data VPlace = Front | Central | Back
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 data VHeight = High | Mid | Low
-  deriving (Eq, Show)
+  deriving (Show, Eq)
+
 
 --- Phonemic Inventory ---
 
@@ -71,13 +72,13 @@ phonemeChart =
   , ("a;", 'ä', V Unrounded Back Low)
   ]
 
-consonants :: [Phoneme]
-consonants = filter isConsonant phonemes
-  where isConsonant p = case p of (C _ _ _) -> True; _ -> False
+isConsonant, isVowel :: Phoneme -> Bool
+isConsonant p = case p of (C _ _ _) -> True; _ -> False
+isVowel p = case p of (V _ _ _) -> True; _ -> False
 
-vowels :: [Phoneme]
+consonants, vowels :: [Phoneme]
+consonants = filter isConsonant phonemes
 vowels = filter isVowel phonemes
-  where isVowel p = case p of (V _ _ _) -> True; _ -> False
 
 asciiReps :: [String]
 asciiReps = map (\(a, _, _) -> a) phonemeChart 
@@ -106,15 +107,28 @@ asciiToUnicode a = lookup a (zip asciiReps unicodeChars)
 unicodeToAscii :: Char -> Maybe String
 unicodeToAscii a = lookup a (zip unicodeChars asciiReps)
 
-convert :: String -> Maybe String
-convert = sequence . (map asciiToUnicode) . tokenize
-  where 
-    tokenize (a:b:xs) =
-      if [a, b] `elem` asciiReps
-      then [a, b]:tokenize xs
-      else [a]:tokenize (b:xs)
-    tokenize [a] = [[a]]
-    tokenize [] = []
+convertAscii :: String -> Char
+convertAscii s =
+  case asciiToUnicode s of
+    Just c -> c
+    Nothing -> '�'
 
-deconvert :: String -> Maybe String
-deconvert = fmap concat . sequence . map unicodeToAscii
+convertUnicode :: Char -> String
+convertUnicode c =
+  case unicodeToAscii c of
+    Just s -> s
+    Nothing -> "�"
+
+tokenize :: String -> [String]
+tokenize (a:b:xs) =
+  if [a, b] `elem` asciiReps
+  then [a, b]:tokenize xs
+  else [a]:tokenize (b:xs)
+tokenize [a] = [[a]]
+tokenize [] = []
+
+convert :: String -> String
+convert = map convertAscii . tokenize
+
+deconvert :: String -> String
+deconvert = concatMap convertUnicode
