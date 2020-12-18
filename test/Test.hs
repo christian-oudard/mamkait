@@ -6,11 +6,14 @@ import Mamkait.Phonology
 main :: IO ()
 main = defaultMain suite
 
+exampleString = either (const []) id $ pstring "malEiTRait"
+
 suite :: TestTree
 suite = testGroup "test suite" [
     testGroup "unittests"
       [ testCase "ascii to unicode" $
-          let ps = pstring "malEiTRait"
-          in either (const "") render ps @=? "malëiţřait"
+          render exampleString @=? "malëiţřait"
+      , testCase "split conjuncts" $
+          (map render $ splitConjuncts exampleString) @=? ["m", "a", "l", "ëi", "ţř", "ai", "t"]
       ]
   ]

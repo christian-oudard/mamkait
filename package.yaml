@@ -5,6 +5,7 @@ dependencies:
   - containers
   - mtl
   - text
+  - pretty-simple
   - tuple
   - bimap
 

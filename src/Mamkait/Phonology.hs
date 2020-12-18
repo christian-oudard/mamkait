@@ -12,9 +12,12 @@ module Mamkait.Phonology
   , render
   , isConsonant
   , isVowel
+  , splitConjuncts
   ) where
 
-import Data.Tuple.Select
+import Data.Tuple.Select (sel1, sel2, sel3)
+import Data.List (groupBy)
+import Data.Ord (comparing)
 import qualified Data.Bimap as BM
 import Mamkait.Error
 
@@ -134,22 +137,25 @@ render :: PString -> String
 render ps = map renderP ps
 
 
--- Syllables and stress markers
+-- Conjuncts and stress markers
 
-data Syllable
-  = CSyl PString
-  | VSyl PString Stress
-data Stress = Stressed | Unstressed
+data Conjunct
+  = CConj PString -- consonantal conjunct
+  | VConj PString Bool  -- vocalic conjunct, stress
 
-stress :: Char -> Char
-stress 'i' = 'í'
-stress 'ï' = 'î'
-stress 'ü' = 'û'
-stress 'u' = 'ú'
-stress 'e' = 'é'
-stress 'ö' = 'ô'
-stress 'ë' = 'ê'
-stress 'o' = 'ó'
-stress 'a' = 'á'
-stress 'ä' = 'â'
-stress c = c
+splitConjuncts :: PString -> [PString]
+splitConjuncts = groupBy sameType
+  where sameType a b = isVowel a == isVowel b
+
+addStress :: Char -> Char
+addStress 'i' = 'í'
+addStress 'ï' = 'î'
+addStress 'ü' = 'û'
+addStress 'u' = 'ú'
+addStress 'e' = 'é'
+addStress 'ö' = 'ô'
+addStress 'ë' = 'ê'
+addStress 'o' = 'ó'
+addStress 'a' = 'á'
+addStress 'ä' = 'â'
+addStress c = error $ "cannot add stress to '" ++ [c] ++ "'"
