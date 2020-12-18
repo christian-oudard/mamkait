@@ -16,7 +16,6 @@ library:
   - Mamkait.Error
   - Mamkait.Phonology
   - Mamkait.Cr
-  - Mamkait.Vr
 
 executables:
   console:
