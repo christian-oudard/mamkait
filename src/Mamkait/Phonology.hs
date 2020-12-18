@@ -16,10 +16,11 @@ module Mamkait.Phonology
 
 import Data.Tuple.Select
 import qualified Data.Bimap as BM
-import Data.Either (lefts, rights)
 import Mamkait.Error
 
--- Section 1.1: Phonemic Inventory
+-- Section 1: Phonology
+
+-- Phonemic inventory
 
 type PString = [Phoneme]
 
@@ -96,19 +97,6 @@ phonemeChart = [
   , (V Unrounded Back Low,                  'ä', 'A')
   ]
 
-stress :: Char -> Char
-stress 'i' = 'í'
-stress 'ï' = 'î'
-stress 'ü' = 'û'
-stress 'u' = 'ú'
-stress 'e' = 'é'
-stress 'ö' = 'ô'
-stress 'ë' = 'ê'
-stress 'o' = 'ó'
-stress 'a' = 'á'
-stress 'ä' = 'â'
-stress c = c
-
 allPhonemes :: [Phoneme]
 allPhonemes = map sel1 phonemeChart
 
@@ -136,12 +124,6 @@ phoneme c =
 pstring :: String -> Either [Error] PString
 pstring s = sequenceLefts $ map phoneme s
 
-sequenceLefts :: [Either a b] -> Either [a] [b]
-sequenceLefts xs =
-  case lefts xs of
-    [] -> Right $ rights xs
-    _ -> Left $ lefts xs
-
 unicodeMap :: BM.Bimap Phoneme Char
 unicodeMap = BM.fromList $ zip allPhonemes chars
 
@@ -150,3 +132,24 @@ renderP p = maybe (error "broken phoneme chart") id $ BM.lookup p unicodeMap
 
 render :: PString -> String
 render ps = map renderP ps
+
+
+-- Syllables and stress markers
+
+data Syllable
+  = CSyl PString
+  | VSyl PString Stress
+data Stress = Stressed | Unstressed
+
+stress :: Char -> Char
+stress 'i' = 'í'
+stress 'ï' = 'î'
+stress 'ü' = 'û'
+stress 'u' = 'ú'
+stress 'e' = 'é'
+stress 'ö' = 'ô'
+stress 'ë' = 'ê'
+stress 'o' = 'ó'
+stress 'a' = 'á'
+stress 'ä' = 'â'
+stress c = c

@@ -1,13 +1,14 @@
 module Main where
 
 import System.IO
-import Data.List (intersperse)
+import Data.List (intersperse, intercalate)
 import Mamkait.Phonology
   ( pstring
   , render
   , chars
   , asciiCodes
   )
+import Mamkait.Error
 
 main :: IO ()
 main = do
@@ -26,12 +27,14 @@ loop = do
   putStr "> "
   hFlush stdout
   command <- getLine
-  putStrLn $ parse command
+  putStrLn $ convert command
   putStrLn ""
   if command /= "exit"
   then loop
   else return ()
 
-
-parse :: String -> String
-parse s = either show render $ pstring s
+convert :: String -> String
+convert s = 
+  case sequenceLefts $ map pstring $ words s of
+  Left errors -> unlines $ map show $ concat errors
+  Right results -> unwords $ map render results
