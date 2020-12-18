@@ -5,10 +5,14 @@ dependencies:
   - containers
   - mtl
   - text
+  - tuple
+  - bimap
+
 
 library:
   source-dirs: src/
   exposed-modules:
+  - Quijada.Scratch
   - Quijada.Phonology
 
 tests:
