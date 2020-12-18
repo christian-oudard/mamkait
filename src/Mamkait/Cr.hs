@@ -1,17 +1,17 @@
-module Quijada.Cr
+module Mamkait.Cr
   ( Cr
   , cr
   , renderCr
   ) where
 
-import Quijada.Phonology
+import Mamkait.Phonology
   ( PString
   , pstring
   , isVowel
   , renderP
   , render
   )
-import Quijada.Error
+import Mamkait.Error
 
 -- Section 3.3, Slot III: Cr - The Main Root 
 

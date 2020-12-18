@@ -1,7 +1,7 @@
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Quijada.Phonology
+import Mamkait.Phonology
 
 main :: IO ()
 main = defaultMain suite

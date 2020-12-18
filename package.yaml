@@ -1,4 +1,4 @@
-name: quijada
+name: mamkait
 
 dependencies:
   - base == 4.*
@@ -12,12 +12,18 @@ dependencies:
 library:
   source-dirs: src/
   exposed-modules:
-  - Quijada.Scratch
-  - Quijada.Error
-  - Quijada.Phonology
-  - Quijada.Cr
-  - Quijada.Vr
+  - Mamkait.Scratch
+  - Mamkait.Error
+  - Mamkait.Phonology
+  - Mamkait.Cr
+  - Mamkait.Vr
 
+executables:
+  console:
+    main: Main.hs
+    source-dirs: console
+    dependencies:
+    - mamkait
 
 tests:
   spec:
@@ -26,7 +32,7 @@ tests:
       - test
       - src
     dependencies:
-      - quijada
+      - mamkait
       - tasty
       - tasty-hunit
 

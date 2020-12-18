@@ -1,4 +1,4 @@
-module Quijada.Phonology
+module Mamkait.Phonology
   ( Phoneme
   , phoneme
   , PString
@@ -17,7 +17,7 @@ module Quijada.Phonology
 import Data.Tuple.Select
 import qualified Data.Bimap as BM
 import Data.Either (lefts, rights)
-import Quijada.Error
+import Mamkait.Error
 
 -- Section 1.1: Phonemic Inventory
 

@@ -1,8 +1,8 @@
-module Quijada.Scratch where
+module Mamkait.Scratch where
 
-import Quijada.Phonology
-import Quijada.Cr
-import Quijada.Vr
+import Mamkait.Phonology
+import Mamkait.Cr
+import Mamkait.Vr
 
 -- Standard Vowel-Form Sequence
 --

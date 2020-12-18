@@ -1,4 +1,4 @@
-module Quijada.Error
+module Mamkait.Error
   ( Error(..)
   ) where
 
