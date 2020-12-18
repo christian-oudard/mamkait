@@ -1,21 +1,25 @@
 module Quijada.Phonology
   ( Phoneme
+  , phoneme
   , PString
-  , phonemes
+  , pstring
+  , allPhonemes
   , chars
+  , asciiCodes
   , consonants
   , vowels
-  , phoneme
   , renderP
-  , pstring
   , render
   , isConsonant
   , isVowel
   ) where
 
+import Data.Tuple.Select
 import qualified Data.Bimap as BM
 import Data.Either (lefts, rights)
 import Quijada.Error
+
+-- Section 1.1: Phonemic Inventory
 
 type PString = [Phoneme]
 
@@ -40,73 +44,92 @@ data VPlace = Front | Central | Back
 data VHeight = High | Mid | Low
   deriving (Show, Eq, Ord)
 
--- Section 1.1: Phonemic Inventory
-phonemeChart :: [(Phoneme, Char)]
+
+phonemeChart :: [(Phoneme, Char, Char)]
+-- 1. Phoneme classification
+-- 2. Unicode character
+-- 3. ASCII character
+
 phonemeChart = [
   -- Consonant
-    (C Unvoiced Labial Stop,                'p')
-  , (C Voiced Labial Stop,                  'b')
-  , (C Unvoiced ApicoDental Stop,           't')
-  , (C Voiced ApicoDental Stop,             'd')
-  , (C Unvoiced Velar Stop,                 'k')
-  , (C Voiced Velar Stop,                   'g')
-  , (C Unvoiced Glottal Stop,               '\'')
-  , (C Unvoiced LabioDental Fricative,      'f')
-  , (C Voiced LabioDental Fricative,        'v')
-  , (C Unvoiced InterDental Fricative,      'ţ')
-  , (C Voiced InterDental Fricative,        'ḑ')
-  , (C Unvoiced ApicoAlveolar Fricative,    's')
-  , (C Voiced ApicoAlveolar Fricative,      'z')
-  , (C Unvoiced AlveoloPalatal Fricative,   'š')
-  , (C Voiced AlveoloPalatal Fricative,     'ž')
-  , (C Unvoiced Palatal Fricative,          'ç') 
-  , (C Unvoiced Uvular Fricative,           'x')
-  , (C Unvoiced Glottal Fricative,          'h')
-  , (C Unvoiced Lateral Fricative,          'ļ')
-  , (C Unvoiced ApicoAlveolar Affricative,  'c')
-  , (C Voiced ApicoAlveolar Affricative,    'ẓ')
-  , (C Unvoiced AlveoloPalatal Affricative, 'č')
-  , (C Voiced AlveoloPalatal Affricative,   'j')
-  , (C Voiced Labial Nasal,                 'm')
-  , (C Voiced ApicoDental Nasal,            'n')
-  , (C Voiced Velar Nasal,                  'ň')
-  , (C Voiced AlveolarRetroflex Tap,        'r')
-  , (C Voiced Lateral Liquid,               'l')
-  , (C Voiced LabioVelar Approximant,       'w')
-  , (C Voiced Palatal Approximant,          'y')
-  , (C Voiced Uvular Approximant,           'ř')
+    (C Unvoiced Labial Stop,                'p', 'p')
+  , (C Voiced Labial Stop,                  'b', 'b')
+  , (C Unvoiced ApicoDental Stop,           't', 't')
+  , (C Voiced ApicoDental Stop,             'd', 'd')
+  , (C Unvoiced Velar Stop,                 'k', 'k')
+  , (C Voiced Velar Stop,                   'g', 'g')
+  , (C Unvoiced Glottal Stop,               '\'', '\'')
+  , (C Unvoiced LabioDental Fricative,      'f', 'f')
+  , (C Voiced LabioDental Fricative,        'v', 'v')
+  , (C Unvoiced InterDental Fricative,      'ţ', 'T')
+  , (C Voiced InterDental Fricative,        'ḑ', 'D')
+  , (C Unvoiced ApicoAlveolar Fricative,    's', 's')
+  , (C Voiced ApicoAlveolar Fricative,      'z', 'z')
+  , (C Unvoiced AlveoloPalatal Fricative,   'š', 'S')
+  , (C Voiced AlveoloPalatal Fricative,     'ž', 'Z')
+  , (C Unvoiced Palatal Fricative,          'ç', 'q') 
+  , (C Unvoiced Uvular Fricative,           'x', 'x')
+  , (C Unvoiced Glottal Fricative,          'h', 'h')
+  , (C Unvoiced Lateral Fricative,          'ļ', 'L')
+  , (C Unvoiced ApicoAlveolar Affricative,  'c', 'c')
+  , (C Voiced ApicoAlveolar Affricative,    'ẓ', 'j')
+  , (C Unvoiced AlveoloPalatal Affricative, 'č', 'C')
+  , (C Voiced AlveoloPalatal Affricative,   'j', 'J')
+  , (C Voiced Labial Nasal,                 'm', 'm')
+  , (C Voiced ApicoDental Nasal,            'n', 'n')
+  , (C Voiced Velar Nasal,                  'ň', 'N')
+  , (C Voiced AlveolarRetroflex Tap,        'r', 'r')
+  , (C Voiced Lateral Liquid,               'l', 'l')
+  , (C Voiced LabioVelar Approximant,       'w', 'w')
+  , (C Voiced Palatal Approximant,          'y', 'y')
+  , (C Voiced Uvular Approximant,           'ř', 'R')
   -- Vowels
-  , (V Unrounded Front High,                'i')
-  , (V Rounded Front High,                  'ü')
-  , (V Rounded Back High,                   'u')
-  , (V Unrounded Front Mid,                 'e')
-  , (V Rounded Front Mid,                   'ö')
-  , (V Unrounded Back Mid,                  'ë')
-  , (V Rounded Back Mid,                    'o')
-  , (V Unrounded Central Low,               'a')
-  , (V Unrounded Back Low,                  'ä')
+  , (V Unrounded Front High,                'i', 'i')
+  , (V Unrounded Central High,              'ï', 'I')
+  , (V Rounded Front High,                  'ü', 'U')
+  , (V Rounded Back High,                   'u', 'u')
+  , (V Unrounded Front Mid,                 'e', 'e')
+  , (V Rounded Front Mid,                   'ö', 'O')
+  , (V Unrounded Back Mid,                  'ë', 'E')
+  , (V Rounded Back Mid,                    'o', 'o')
+  , (V Unrounded Central Low,               'a', 'a')
+  , (V Unrounded Back Low,                  'ä', 'A')
   ]
 
-phonemes :: [Phoneme]
-phonemes = map fst phonemeChart
+stress :: Char -> Char
+stress 'i' = 'í'
+stress 'ï' = 'î'
+stress 'ü' = 'û'
+stress 'u' = 'ú'
+stress 'e' = 'é'
+stress 'ö' = 'ô'
+stress 'ë' = 'ê'
+stress 'o' = 'ó'
+stress 'a' = 'á'
+stress 'ä' = 'â'
+stress c = c
 
-chars :: [Char]
-chars = map snd phonemeChart
+allPhonemes :: [Phoneme]
+allPhonemes = map sel1 phonemeChart
+
+chars, asciiCodes :: [Char]
+chars = map sel2 phonemeChart
+asciiCodes = map sel3 phonemeChart
 
 isConsonant, isVowel :: Phoneme -> Bool
 isConsonant p = case p of (C _ _ _) -> True; _ -> False
 isVowel p = case p of (V _ _ _) -> True; _ -> False
 
 consonants, vowels :: [Phoneme]
-consonants = filter isConsonant phonemes
-vowels = filter isVowel phonemes
+consonants = filter isConsonant allPhonemes
+vowels = filter isVowel allPhonemes
 
-phonemeMap :: BM.Bimap Phoneme Char
-phonemeMap = BM.fromList phonemeChart
+asciiMap :: BM.Bimap Phoneme Char
+asciiMap = BM.fromList $ zip allPhonemes asciiCodes
 
 phoneme :: Char -> Either Error Phoneme
 phoneme c =
-  case BM.lookupR c phonemeMap of
+  case BM.lookupR c asciiMap of
     Just p -> Right p
     Nothing -> Left $ UnknownChar c
 
@@ -119,8 +142,11 @@ sequenceLefts xs =
     [] -> Right $ rights xs
     _ -> Left $ lefts xs
 
+unicodeMap :: BM.Bimap Phoneme Char
+unicodeMap = BM.fromList $ zip allPhonemes chars
+
 renderP :: Phoneme -> Char
-renderP p = maybe (error "broken phoneme chart") id $ BM.lookup p phonemeMap
+renderP p = maybe (error "broken phoneme chart") id $ BM.lookup p unicodeMap
 
 render :: PString -> String
 render ps = map renderP ps

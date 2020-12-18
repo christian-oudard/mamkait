@@ -1,8 +1,8 @@
 module Quijada.Scratch where
 
 import Quijada.Phonology
-import Quijada.Root
-
+import Quijada.Cr
+import Quijada.Vr
 
 -- Standard Vowel-Form Sequence
 --

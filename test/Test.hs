@@ -9,8 +9,8 @@ main = defaultMain suite
 suite :: TestTree
 suite = testGroup "test suite" [
     testGroup "unittests"
-      [ testCase "round trip conversion" $
-          let word = "malëiţřait"
-          in (maybe "" render (pstring word)) @=? word
+      [ testCase "ascii to unicode" $
+          let ps = pstring "malEiTRait"
+          in either (const "") render ps @=? "malëiţřait"
       ]
   ]

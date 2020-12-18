@@ -15,7 +15,9 @@ library:
   - Quijada.Scratch
   - Quijada.Error
   - Quijada.Phonology
-  - Quijada.Root
+  - Quijada.Cr
+  - Quijada.Vr
+
 
 tests:
   spec:
