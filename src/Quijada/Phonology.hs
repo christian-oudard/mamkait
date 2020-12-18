@@ -1,8 +1,12 @@
 module Quijada.Phonology
   ( Phoneme
+  , PString
+  , phonemes
+  , chars
+  , consonants
+  , vowels
   , phoneme
   , renderP
-  , PString
   , pstring
   , render
   , isConsonant
@@ -97,6 +101,7 @@ consonants, vowels :: [Phoneme]
 consonants = filter isConsonant phonemes
 vowels = filter isVowel phonemes
 
+phonemeMap :: BM.Bimap Phoneme Char
 phonemeMap = BM.fromList phonemeChart
 
 phoneme :: Char -> Either Error Phoneme
