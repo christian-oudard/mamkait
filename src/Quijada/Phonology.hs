@@ -1,8 +1,19 @@
-module Quijada.Phonology where
+module Quijada.Phonology
+  ( Phoneme
+  , phoneme
+  , renderP
+  , PString
+  , pstring
+  , render
+  , isConsonant
+  , isVowel
+  ) where
 
 import qualified Data.Bimap as BM
-import Data.Maybe (fromJust)
+import Data.Either (lefts, rights)
+import Quijada.Error
 
+type PString = [Phoneme]
 
 data Phoneme
   = C CVoicedness CPlace CManner
@@ -25,7 +36,6 @@ data VPlace = Front | Central | Back
 data VHeight = High | Mid | Low
   deriving (Show, Eq, Ord)
 
-
 -- Section 1.1: Phonemic Inventory
 phonemeChart :: [(Phoneme, Char)]
 phonemeChart = [
@@ -36,7 +46,7 @@ phonemeChart = [
   , (C Voiced ApicoDental Stop,             'd')
   , (C Unvoiced Velar Stop,                 'k')
   , (C Voiced Velar Stop,                   'g')
-  , (C Unvoiced Glottal Stop,               '’')
+  , (C Unvoiced Glottal Stop,               '\'')
   , (C Unvoiced LabioDental Fricative,      'f')
   , (C Voiced LabioDental Fricative,        'v')
   , (C Unvoiced InterDental Fricative,      'ţ')
@@ -45,6 +55,7 @@ phonemeChart = [
   , (C Voiced ApicoAlveolar Fricative,      'z')
   , (C Unvoiced AlveoloPalatal Fricative,   'š')
   , (C Voiced AlveoloPalatal Fricative,     'ž')
+  , (C Unvoiced Palatal Fricative,          'ç') 
   , (C Unvoiced Uvular Fricative,           'x')
   , (C Unvoiced Glottal Fricative,          'h')
   , (C Unvoiced Lateral Fricative,          'ļ')
@@ -72,6 +83,11 @@ phonemeChart = [
   , (V Unrounded Back Low,                  'ä')
   ]
 
+phonemes :: [Phoneme]
+phonemes = map fst phonemeChart
+
+chars :: [Char]
+chars = map snd phonemeChart
 
 isConsonant, isVowel :: Phoneme -> Bool
 isConsonant p = case p of (C _ _ _) -> True; _ -> False
@@ -81,17 +97,25 @@ consonants, vowels :: [Phoneme]
 consonants = filter isConsonant phonemes
 vowels = filter isVowel phonemes
 
-phonemes :: [Phoneme]
-phonemes = map fst phonemeChart
-
-chars :: [Char]
-chars = map snd phonemeChart
-
-phonemeMap :: BM.Bimap Phoneme Char
 phonemeMap = BM.fromList phonemeChart
 
-phonemeToChar :: Phoneme -> Maybe Char
-phonemeToChar p = BM.lookup p phonemeMap
+phoneme :: Char -> Either Error Phoneme
+phoneme c =
+  case BM.lookupR c phonemeMap of
+    Just p -> Right p
+    Nothing -> Left $ UnknownChar c
 
-charToPhoneme :: Char -> Maybe Phoneme
-charToPhoneme a = BM.lookupR a phonemeMap
+pstring :: String -> Either [Error] PString
+pstring s = sequenceLefts $ map phoneme s
+
+sequenceLefts :: [Either a b] -> Either [a] [b]
+sequenceLefts xs =
+  case lefts xs of
+    [] -> Right $ rights xs
+    _ -> Left $ lefts xs
+
+renderP :: Phoneme -> Char
+renderP p = maybe (error "broken phoneme chart") id $ BM.lookup p phonemeMap
+
+render :: PString -> String
+render ps = map renderP ps

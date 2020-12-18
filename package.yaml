@@ -13,7 +13,9 @@ library:
   source-dirs: src/
   exposed-modules:
   - Quijada.Scratch
+  - Quijada.Error
   - Quijada.Phonology
+  - Quijada.Root
 
 tests:
   spec:
