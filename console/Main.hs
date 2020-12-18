@@ -36,5 +36,5 @@ loop = do
 convert :: String -> String
 convert s = 
   case sequenceLefts $ map pstring $ words s of
-  Left errors -> unlines $ map show $ concat errors
+  Left errors -> intercalate "\n" $ map show $ concat errors
   Right results -> unwords $ map render results
