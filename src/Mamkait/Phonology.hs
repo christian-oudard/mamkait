@@ -207,12 +207,14 @@ splitConjuncts = groupBy sameType
       | otherwise  = maybe True isVowel $ phoneme c
 
 makeConj :: String -> Conjunct
-makeConj s =
-  if isConsonant $ head $ pstring s
-    then CConj $ pstring s
-  else if last s == stressMarker
-    then VConj True $ pstring $ init s
-    else VConj False $ pstring s
+makeConj s
+  | startsWithConsonant  = CConj ps
+  | endsWithStressMarker  = VConj True $ pstring $ init s
+  | otherwise  = VConj False ps
+  where
+    ps = pstring s
+    startsWithConsonant = length ps > 0 && (isConsonant $ head ps)
+    endsWithStressMarker = length s > 0 && last s == stressMarker
 
 vowelIndex :: Int -> [Conjunct] -> Int
 -- vowel index 0 is the ultimate syllable

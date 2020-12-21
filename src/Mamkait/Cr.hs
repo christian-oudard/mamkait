@@ -6,6 +6,7 @@ module Mamkait.Cr where
 
 import Mamkait.Phonology (Conjunct)
 
+
 -- Section 3.3, Slot III: Cr - The Main Root 
 
 data Cr = Cr Conjunct

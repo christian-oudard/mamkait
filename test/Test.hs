@@ -36,5 +36,9 @@ suite = testGroup "test suite" [
           (render $ lexConjuncts "ma;lala") @?= "málala"
       , testCase "lex and render, small word" $
           (render $ lexConjuncts "gzz") @?= "gzz"
+      , testCase "lex error, stress on consonant ignored" $
+          (render $ lexConjuncts "mal;") @?= "mal"
+      , testCase "pstring error, unknown character ignored" $
+           (renderPString $ pstring $ "m2al") @?= "mal"
       ]
   ]
