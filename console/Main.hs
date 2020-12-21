@@ -1,14 +1,15 @@
 module Main where
 
 import System.IO
-import Data.List (intersperse, intercalate)
+import Data.List (intersperse)
 import Mamkait.Phonology
-  ( pstring
-  , render
-  , chars
+  ( chars
   , asciiCodes
+  , lexConjuncts
+  , render
+  , renderHyphenated
   )
-import Mamkait.Error
+-- import Mamkait.Error
 
 main :: IO ()
 main = do
@@ -27,14 +28,8 @@ loop = do
   putStr "> "
   hFlush stdout
   command <- getLine
-  putStrLn $ convert command
-  putStrLn ""
+  putStrLn $ unwords $ map (render . lexConjuncts) $ words command
+  putStrLn $ unlines $ map (renderHyphenated . lexConjuncts) $ words command
   if command /= "exit"
   then loop
   else return ()
-
-convert :: String -> String
-convert s = 
-  case sequenceLefts $ map pstring $ words s of
-  Left errors -> intercalate "\n" $ map show $ concat errors
-  Right results -> unwords $ map render results
