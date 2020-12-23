@@ -1,8 +1,10 @@
 module Mamkait.Phonology
   ( Phoneme
-  , phoneme
   , PString
-  , pstring
+  , fromAscii
+  , fromUnicode
+  , toAscii
+  , toUnicode
   , Conjunct
   , allPhonemes
   , reps
@@ -13,8 +15,6 @@ module Mamkait.Phonology
   , isVowel
   , consonantReps
   , vowelReps
-  , renderPhoneme
-  , renderPString
   , isConsonantConjunct
   , isVowelConjunct
   , lexConjuncts
@@ -142,26 +142,41 @@ consonants = filter isConsonant allPhonemes
 vowels = filter isVowel allPhonemes
 
 vowelReps, consonantReps :: [T.Text]
-vowelReps = map renderPhoneme vowels
-consonantReps = map renderPhoneme consonants
+vowelReps = map phonemeToUnicode vowels
+consonantReps = map phonemeToUnicode consonants
 
 asciiMap :: BM.Bimap Phoneme Char
 asciiMap = BM.fromList $ zip allPhonemes asciiCodes
 
-phoneme :: Char -> Maybe Phoneme
-phoneme c = BM.lookupR c asciiMap
+phonemeFromAscii :: Char -> Maybe Phoneme
+phonemeFromAscii c = BM.lookupR c asciiMap
 
-pstring :: T.Text -> PString
-pstring = mapMaybe phoneme . T.unpack
+fromAscii :: T.Text -> PString
+fromAscii = mapMaybe phonemeFromAscii . T.unpack
+
+phonemeToAscii :: Phoneme -> T.Text
+phonemeToAscii p = T.singleton $ fromJust $ BM.lookup p asciiMap
+
+toAscii :: PString -> T.Text
+toAscii ps = T.concat $ map phonemeToAscii ps
 
 unicodeMap :: BM.Bimap Phoneme T.Text
 unicodeMap = BM.fromList $ zip allPhonemes reps
 
-renderPhoneme :: Phoneme -> T.Text
-renderPhoneme p = fromJust $ BM.lookup p unicodeMap
+phonemeFromUnicode :: T.Text -> Maybe Phoneme
+phonemeFromUnicode c = BM.lookupR c unicodeMap
 
-renderPString :: PString -> T.Text
-renderPString ps = T.concat $ map renderPhoneme ps
+fromUnicode :: T.Text -> PString
+fromUnicode = mapMaybe phonemeFromUnicode . breakCharacters . normalize NFD
+
+breakCharacters :: T.Text -> [T.Text]
+breakCharacters = map brkBreak . breaks (breakCharacter Root)
+
+phonemeToUnicode :: Phoneme -> T.Text
+phonemeToUnicode p = fromJust $ BM.lookup p unicodeMap
+
+toUnicode :: PString -> T.Text
+toUnicode ps = T.concat $ map phonemeToUnicode ps
 
 
 -- Conjuncts and stress markers
@@ -179,9 +194,6 @@ vowelStress :: T.Text -> T.Text
 vowelStress c
   | T.length c == 1  = c <> acute -- If the vowel is unaccented, add an acute accent.
   | otherwise  = T.take 1 c <> circumflex -- The vowel has a diaeresis. Turn it into a circumflex.
-
-breakCharacters :: T.Text -> [T.Text] 
-breakCharacters = map brkBreak . breaks (breakCharacter Root)
 
 isConsonantConjunct, isVowelConjunct :: Conjunct -> Bool
 isConsonantConjunct (CConj _) = True
@@ -218,15 +230,15 @@ splitConjuncts = T.groupBy sameType
     isVowel' :: Char -> Bool
     isVowel' c
       | c == stressMarker  = True -- Count the stress marker as a vowel for splitting purposes.
-      | otherwise  = maybe True isVowel $ phoneme c
+      | otherwise  = maybe True isVowel $ phonemeFromAscii c
 
 makeConj :: T.Text -> Conjunct
 makeConj s
   | startsWithConsonant  = CConj ps
-  | endsWithStressMarker  = VConj True $ pstring $ T.take 1 s
+  | endsWithStressMarker  = VConj True $ fromAscii $ T.init s
   | otherwise  = VConj False ps
   where
-    ps = pstring s
+    ps = fromAscii s
     startsWithConsonant = not (null ps) && isConsonant (head ps)
     endsWithStressMarker = not (T.null s) && T.last s == stressMarker
 
@@ -259,10 +271,10 @@ modifyNth n f (x:xs)
   | otherwise  = x : modifyNth (n-1) f xs
 
 renderConjunct :: Conjunct -> T.Text
-renderConjunct (CConj ps) = renderPString ps
+renderConjunct (CConj ps) = toUnicode ps
 renderConjunct (VConj stressed ps)
-  | stressed  = T.concat $ modifyNth 0 vowelStress $ breakCharacters $ renderPString ps
-  | otherwise  = renderPString ps
+  | stressed  = T.concat $ modifyNth 0 vowelStress $ breakCharacters $ toUnicode ps
+  | otherwise  = toUnicode ps
 
 render :: [Conjunct] -> T.Text
 render = T.concat . map renderConjunct . removeDefaultStress
