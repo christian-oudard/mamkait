@@ -5,9 +5,9 @@ dependencies:
   - containers
   - mtl
   - text
+  - text-icu
   - tuple
   - bimap
-
 
 library:
   source-dirs: src/

@@ -2,8 +2,12 @@ module Main where
 
 import System.IO
 import Data.List (intersperse)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import Control.Monad (when)
+
 import Mamkait.Phonology
-  ( chars
+  ( reps
   , asciiCodes
   , lexConjuncts
   , render
@@ -14,11 +18,11 @@ import Mamkait.Phonology
 main :: IO ()
 main = do
   let title = " Mamkait "
-  putStrLn $ take (length title) $ repeat '-'
+  putStrLn $ replicate (length title) '-'
   putStrLn title
-  putStrLn $ take (length title) $ repeat '-'
+  putStrLn $ replicate (length title) '-'
   putStrLn ""
-  putStrLn $ intersperse ' ' chars
+  TIO.putStrLn $ T.intercalate " " reps
   putStrLn $ intersperse ' ' asciiCodes
   putStrLn ""
   loop
@@ -27,9 +31,7 @@ loop :: IO ()
 loop = do
   putStr "> "
   hFlush stdout
-  command <- getLine
-  putStrLn $ unwords $ map (render . lexConjuncts) $ words command
-  putStrLn $ unlines $ map (renderHyphenated . lexConjuncts) $ words command
-  if command /= "exit"
-  then loop
-  else return ()
+  command <- TIO.getLine
+  TIO.putStrLn $ T.unwords $ map (render . lexConjuncts) $ T.words command
+  TIO.putStrLn $ T.unlines $ map (renderHyphenated . lexConjuncts) $ T.words command
+  when (command /= "exit") loop

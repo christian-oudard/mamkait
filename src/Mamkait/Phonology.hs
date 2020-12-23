@@ -5,12 +5,14 @@ module Mamkait.Phonology
   , pstring
   , Conjunct
   , allPhonemes
-  , chars
+  , reps
   , asciiCodes
   , consonants
   , vowels
   , isConsonant
   , isVowel
+  , consonantReps
+  , vowelReps
   , renderPhoneme
   , renderPString
   , isConsonantConjunct
@@ -25,9 +27,11 @@ module Mamkait.Phonology
   ) where
 
 import Data.Tuple.Select (sel1, sel2, sel3)
-import Data.Maybe (catMaybes)
-import Data.List (groupBy, intercalate)
+import Data.Maybe (mapMaybe, fromJust)
 import qualified Data.Bimap as BM
+import qualified Data.Text as T
+import Data.Text.ICU
+
 
 -- Section 1: Phonology
 
@@ -57,73 +61,89 @@ data VHeight = High | Mid | Low
   deriving (Show, Eq, Ord)
 
 
-phonemeChart :: [(Phoneme, Char, Char)]
--- 1. Phoneme classification
--- 2. Unicode character
--- 3. ASCII character
+grave, acute, circumflex, diaeresis, caron, underDot, cedilla :: T.Text
+-- Combining accents
+grave = "\x300"
+acute = "\x301"
+circumflex = "\x302"
+diaeresis = "\x308"
+caron = "\x30C"
+underDot = "\x323"
+cedilla = "\x327"
 
+phonemeChart :: [(Phoneme, Char, T.Text)]
+-- 1. Phoneme classification
+-- 2. ASCII input character
+-- 3. Unicode representation
 phonemeChart = [
   -- Consonant
-    (C Unvoiced Labial Stop,                'p', 'p')
-  , (C Voiced Labial Stop,                  'b', 'b')
-  , (C Unvoiced ApicoDental Stop,           't', 't')
-  , (C Voiced ApicoDental Stop,             'd', 'd')
-  , (C Unvoiced Velar Stop,                 'k', 'k')
-  , (C Voiced Velar Stop,                   'g', 'g')
-  , (C Unvoiced Glottal Stop,               '\'', '\'')
-  , (C Unvoiced LabioDental Fricative,      'f', 'f')
-  , (C Voiced LabioDental Fricative,        'v', 'v')
-  , (C Unvoiced InterDental Fricative,      'ţ', 'T')
-  , (C Voiced InterDental Fricative,        'ḑ', 'D')
-  , (C Unvoiced ApicoAlveolar Fricative,    's', 's')
-  , (C Voiced ApicoAlveolar Fricative,      'z', 'z')
-  , (C Unvoiced AlveoloPalatal Fricative,   'š', 'S')
-  , (C Voiced AlveoloPalatal Fricative,     'ž', 'Z')
-  , (C Unvoiced Palatal Fricative,          'ç', 'q')
-  , (C Unvoiced Uvular Fricative,           'x', 'x')
-  , (C Unvoiced Glottal Fricative,          'h', 'h')
-  , (C Unvoiced Lateral Fricative,          'ļ', 'L')
-  , (C Unvoiced ApicoAlveolar Affricative,  'c', 'c')
-  , (C Voiced ApicoAlveolar Affricative,    'ẓ', 'j')
-  , (C Unvoiced AlveoloPalatal Affricative, 'č', 'C')
-  , (C Voiced AlveoloPalatal Affricative,   'j', 'J')
-  , (C Voiced Labial Nasal,                 'm', 'm')
-  , (C Voiced ApicoDental Nasal,            'n', 'n')
-  , (C Voiced Velar Nasal,                  'ň', 'N')
-  , (C Voiced AlveolarRetroflex Tap,        'r', 'r')
-  , (C Voiced Lateral Liquid,               'l', 'l')
-  , (C Voiced LabioVelar Approximant,       'w', 'w')
-  , (C Voiced Palatal Approximant,          'y', 'y')
-  , (C Voiced Uvular Approximant,           'ř', 'R')
+    (C Unvoiced Labial Stop,                'p', "p")
+  , (C Voiced Labial Stop,                  'b', "b")
+  , (C Unvoiced ApicoDental Stop,           't', "t")
+  , (C Voiced ApicoDental Stop,             'd', "d")
+  , (C Unvoiced Velar Stop,                 'k', "k")
+  , (C Voiced Velar Stop,                   'g', "g")
+  , (C Unvoiced Glottal Stop,               '\'', "\'")
+  , (C Unvoiced LabioDental Fricative,      'f', "f")
+  , (C Voiced LabioDental Fricative,        'v', "v")
+  , (C Unvoiced InterDental Fricative,      'T', "t" <> cedilla)
+  , (C Voiced InterDental Fricative,        'D', "d" <> cedilla)
+  , (C Unvoiced ApicoAlveolar Fricative,    's', "s")
+  , (C Voiced ApicoAlveolar Fricative,      'z', "z")
+  , (C Unvoiced AlveoloPalatal Fricative,   'S', "s" <> caron)
+  , (C Voiced AlveoloPalatal Fricative,     'Z', "z" <> caron)
+  , (C Unvoiced Palatal Fricative,          'q', "c" <> cedilla)
+  , (C Unvoiced Uvular Fricative,           'x', "x")
+  , (C Unvoiced Glottal Fricative,          'h', "h")
+  , (C Unvoiced Lateral Fricative,          'L', "l" <> cedilla)
+  , (C Unvoiced ApicoAlveolar Affricative,  'c', "c")
+  , (C Voiced ApicoAlveolar Affricative,    'j', "z" <> underDot)
+  , (C Unvoiced AlveoloPalatal Affricative, 'C', "c" <> caron)
+  , (C Voiced AlveoloPalatal Affricative,   'J', "j")
+  , (C Voiced Labial Nasal,                 'm', "m")
+  , (C Voiced ApicoDental Nasal,            'n', "n")
+  , (C Voiced Velar Nasal,                  'N', "n" <> caron)
+  , (C Voiced AlveolarRetroflex Tap,        'r', "r")
+  , (C Voiced Lateral Liquid,               'l', "l")
+  , (C Voiced LabioVelar Approximant,       'w', "w")
+  , (C Voiced Palatal Approximant,          'y', "y")
+  , (C Voiced Uvular Approximant,           'R', "r" <> caron)
   -- Vowels
-  , (V Unrounded Front High,                'i', 'i')
-  , (V Unrounded Central High,              'ï', 'I')
-  , (V Rounded Front High,                  'ü', 'U')
-  , (V Rounded Back High,                   'u', 'u')
-  , (V Unrounded Front Mid,                 'e', 'e')
-  , (V Rounded Front Mid,                   'ö', 'O')
-  , (V Unrounded Back Mid,                  'ë', 'E')
-  , (V Rounded Back Mid,                    'o', 'o')
-  , (V Unrounded Central Low,               'a', 'a')
-  , (V Unrounded Back Low,                  'ä', 'A')
+  , (V Unrounded Front High,                'i', "i")
+  , (V Unrounded Central High,              'I', "i" <> diaeresis)
+  , (V Rounded Front High,                  'U', "u" <> diaeresis)
+  , (V Rounded Back High,                   'u', "u")
+  , (V Unrounded Front Mid,                 'e', "e")
+  , (V Rounded Front Mid,                   'O', "o" <> diaeresis)
+  , (V Unrounded Back Mid,                  'E', "e" <> diaeresis)
+  , (V Rounded Back Mid,                    'o', "o")
+  , (V Unrounded Central Low,               'a', "a")
+  , (V Unrounded Back Low,                  'A', "a" <> diaeresis)
   ]
+
 
 allPhonemes :: [Phoneme]
 allPhonemes = map sel1 phonemeChart
 
-chars, asciiCodes :: [Char]
-chars = map sel2 phonemeChart
-asciiCodes = map sel3 phonemeChart
+asciiCodes :: [Char]
+asciiCodes = map sel2 phonemeChart
+
+reps :: [T.Text]
+reps = map sel3 phonemeChart
 
 isConsonant, isVowel :: Phoneme -> Bool
-isConsonant (C _ _ _) = True
-isConsonant (V _ _ _) = False
-isVowel (C _ _ _) = False
-isVowel (V _ _ _) = True
+isConsonant C {} = True
+isConsonant V {} = False
+isVowel C {} = False
+isVowel V {} = True
 
 consonants, vowels :: [Phoneme]
 consonants = filter isConsonant allPhonemes
 vowels = filter isVowel allPhonemes
+
+vowelReps, consonantReps :: [T.Text]
+vowelReps = map renderPhoneme vowels
+consonantReps = map renderPhoneme consonants
 
 asciiMap :: BM.Bimap Phoneme Char
 asciiMap = BM.fromList $ zip allPhonemes asciiCodes
@@ -131,17 +151,17 @@ asciiMap = BM.fromList $ zip allPhonemes asciiCodes
 phoneme :: Char -> Maybe Phoneme
 phoneme c = BM.lookupR c asciiMap
 
-pstring :: String -> PString
-pstring s = catMaybes $ map phoneme s
+pstring :: T.Text -> PString
+pstring = mapMaybe phoneme . T.unpack
 
-unicodeMap :: BM.Bimap Phoneme Char
-unicodeMap = BM.fromList $ zip allPhonemes chars
+unicodeMap :: BM.Bimap Phoneme T.Text
+unicodeMap = BM.fromList $ zip allPhonemes reps
 
-renderPhoneme :: Phoneme -> Char
-renderPhoneme p = maybe (error "broken phoneme chart") id $ BM.lookup p unicodeMap
+renderPhoneme :: Phoneme -> T.Text
+renderPhoneme p = fromJust $ BM.lookup p unicodeMap
 
-renderPString :: PString -> String
-renderPString ps = map renderPhoneme ps
+renderPString :: PString -> T.Text
+renderPString ps = T.concat $ map renderPhoneme ps
 
 
 -- Conjuncts and stress markers
@@ -155,19 +175,13 @@ data Conjunct
 stressMarker :: Char
 stressMarker = ';'
 
-vowelStress :: Char -> Char
-vowelStress 'i' = 'í'
-vowelStress 'ï' = 'î'
-vowelStress 'ü' = 'û'
-vowelStress 'u' = 'ú'
-vowelStress 'e' = 'é'
-vowelStress 'ö' = 'ô'
-vowelStress 'ë' = 'ê'
-vowelStress 'o' = 'ó'
-vowelStress 'a' = 'á'
-vowelStress 'ä' = 'â'
-vowelStress c = error $ "cannot add stress to '" ++ [c] ++ "'"
+vowelStress :: T.Text -> T.Text
+vowelStress c
+  | T.length c == 1  = c <> acute -- If the vowel is unaccented, add an acute accent.
+  | otherwise  = T.take 1 c <> circumflex -- The vowel has a diaeresis. Turn it into a circumflex.
 
+breakCharacters :: T.Text -> [T.Text] 
+breakCharacters = map brkBreak . breaks (breakCharacter Root)
 
 isConsonantConjunct, isVowelConjunct :: Conjunct -> Bool
 isConsonantConjunct (CConj _) = True
@@ -184,7 +198,7 @@ getStress (CConj _) = Nothing
 getStress (VConj stress _) = Just stress
 
 getStresses :: [Conjunct] -> [Bool]
-getStresses conjs = catMaybes $ map getStress $ conjs
+getStresses = mapMaybe getStress
 
 addStress :: Conjunct -> Conjunct
 removeStress :: Conjunct -> Conjunct
@@ -193,11 +207,11 @@ addStress conj = conj
 removeStress (VConj _ ps) = VConj False ps
 removeStress conj = conj
 
-lexConjuncts :: String -> [Conjunct]
+lexConjuncts :: T.Text -> [Conjunct]
 lexConjuncts s = addDefaultStress $ map makeConj $ splitConjuncts s
 
-splitConjuncts :: String -> [String]
-splitConjuncts = groupBy sameType
+splitConjuncts :: T.Text -> [T.Text]
+splitConjuncts = T.groupBy sameType
   where
     sameType :: Char -> Char -> Bool
     sameType a b = isVowel' a == isVowel' b
@@ -206,15 +220,15 @@ splitConjuncts = groupBy sameType
       | c == stressMarker  = True -- Count the stress marker as a vowel for splitting purposes.
       | otherwise  = maybe True isVowel $ phoneme c
 
-makeConj :: String -> Conjunct
+makeConj :: T.Text -> Conjunct
 makeConj s
   | startsWithConsonant  = CConj ps
-  | endsWithStressMarker  = VConj True $ pstring $ init s
+  | endsWithStressMarker  = VConj True $ pstring $ T.take 1 s
   | otherwise  = VConj False ps
   where
     ps = pstring s
-    startsWithConsonant = length ps > 0 && (isConsonant $ head ps)
-    endsWithStressMarker = length s > 0 && last s == stressMarker
+    startsWithConsonant = not (null ps) && isConsonant (head ps)
+    endsWithStressMarker = not (T.null s) && T.last s == stressMarker
 
 vowelIndex :: Int -> [Conjunct] -> Int
 -- vowel index 0 is the ultimate syllable
@@ -227,7 +241,7 @@ vowelIndex n conjs =
 addDefaultStress :: [Conjunct] -> [Conjunct]
 -- If the formative is completely unstressed, add default penultimate stress.
 addDefaultStress conjs
-  | (length conjs >= 2 && all (==False) (getStresses conjs))
+  | length conjs >= 2 && all (==False) (getStresses conjs)
     = modifyNth (vowelIndex 1 conjs) addStress conjs
   | otherwise  = conjs
 
@@ -241,17 +255,17 @@ removeDefaultStress conjs
 modifyNth :: Int -> (a -> a) -> [a] -> [a]
 modifyNth _ _ [] = []
 modifyNth n f (x:xs)
-  | n == 0  = (f x):xs
-  | otherwise  = x:modifyNth (n-1) f xs
+  | n == 0  = f x : xs
+  | otherwise  = x : modifyNth (n-1) f xs
 
-renderConjunct :: Conjunct -> String
+renderConjunct :: Conjunct -> T.Text
 renderConjunct (CConj ps) = renderPString ps
 renderConjunct (VConj stressed ps)
-  | stressed  = modifyNth 0 vowelStress $ renderPString ps
+  | stressed  = T.concat $ modifyNth 0 vowelStress $ breakCharacters $ renderPString ps
   | otherwise  = renderPString ps
 
-render :: [Conjunct] -> String
-render = concatMap renderConjunct . removeDefaultStress
+render :: [Conjunct] -> T.Text
+render = T.concat . map renderConjunct . removeDefaultStress
 
-renderHyphenated :: [Conjunct] -> String
-renderHyphenated = intercalate "-" . map renderConjunct . removeDefaultStress
+renderHyphenated :: [Conjunct] -> T.Text
+renderHyphenated = T.intercalate "-" . map renderConjunct . removeDefaultStress
