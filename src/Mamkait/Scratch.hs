@@ -1,5 +1,7 @@
 module Mamkait.Scratch where
 
+import Data.Tuple
+import Data.List
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO

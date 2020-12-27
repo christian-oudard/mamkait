@@ -2,7 +2,11 @@ module Mamkait.Grammar where
 
 import Data.Maybe (fromJust)
 import qualified Data.Bimap as BM
-import Mamkait.Phonology (Conjunct, vowelForm)
+import Mamkait.Phonology
+  ( Conjunct
+  , makeConj
+  , vowelForm
+  )
 
 
 type SlotIV = (Function, Specification, Context)
@@ -25,7 +29,6 @@ data Context
   | RPS -- Representational
   | AMG -- Amalgamative
   deriving (Show, Eq, Ord)
-
 
 vrTable :: BM.Bimap Conjunct SlotIV
 vrTable = BM.fromList
@@ -68,3 +71,135 @@ vrToSlotIV conj = BM.lookup conj vrTable
 
 slotIVToVr :: SlotIV -> Conjunct
 slotIVToVr slot = fromJust $ BM.lookupR slot vrTable
+
+
+data Bias
+  = DOL -- Dolorous
+  | SKP -- Skeptical
+  | IPT -- Impatient
+  | RVL -- Revelative
+  | TRP -- Trepidative
+  | RPU -- Repulsive
+  | PSC -- Prosaic
+  | CMD -- Comedic
+  | PPV -- Propositive
+  | SGS -- Suggestive
+  | DFD -- Diffident
+  | RFL -- Reflective
+  | DES -- Desperative
+  | DPB -- Disapprobative
+  | CTP -- Contemptive
+  | EXA -- Exasperative
+  | IDG -- Indignative
+  | DIS -- Dismissive
+  | DRS -- Derisive
+  | PES -- Pessimistic
+  | DUB -- Dubitative
+  | IVD -- Invidious
+  | DCC -- Disconcertive
+  | STU -- Stupefactive
+  | FSC -- Fascinative
+  | IFT -- Infatuative
+  | EUH -- Euphoric
+  | EUP -- Euphemistic
+  | CRR -- Corrective
+  | APB -- Approbative
+  | IRO -- Ironic
+  | PSM -- Presumptive
+  | GRT -- Gratificative
+  | SAT -- Satiative
+  | PPX -- Perplexive
+  | CTV -- Contemplative
+  | PPT -- Propitious
+  | SOL -- Solicitative
+  | RAC -- Reactive
+  | COI -- Coincidental
+  | FOR -- Fortuitous
+  | ANN -- Annunciative
+  | DLC -- Delectative
+  | ATE -- Attentive
+  | RNC -- Renunciative
+  | MAN -- Mandatory
+  | EXG -- Exigent
+  | ISP -- Insipid
+  | ADM -- Admissive
+  | APH -- Apprehensive
+  | OPT -- Optimal
+  | CNV -- Contensive
+  | IPL -- Implicative
+  | ACC -- Accidental
+  | ANP -- Anticipative
+  | ACH -- Archetypal
+  | VEX -- Vexative
+  | CRP -- Corruptive
+  | DEJ -- Dejective
+  deriving (Show, Eq, Ord)
+
+biasTable :: BM.Bimap Conjunct Bias
+biasTable = BM.map makeConj $ BM.fromList
+  [ ("RRx", DOL)
+  , ("rnZ", SKP)
+  , ("ZZv", IPT)
+  , ("mmL", RVL)
+  , ("llC", TRP)
+  , ("SStL", RPU)
+  , ("ZZt", PSC)
+  , ("pLL", CMD)
+  , ("sl", PPV)
+  , ("ltq", SGS)
+  , ("cC", DFD)
+  , ("llm", RFL)
+  , ("mRR", DES)
+  , ("ffx", DPB)
+  , ("kSS", CTP)
+  , ("kqq", EXA)
+  , ("pSS", IDG)
+  , ("kff", DIS)
+  , ("pfc", DRS)
+  , ("ksp", PES)
+  , ("mmf", DUB)
+  , ("RRn", IVD)
+  , ("gzJ", DCC)
+  , ("LLC", STU)
+  , ("ZZJ", FSC)
+  , ("vvr", IFT)
+  , ("gzz", EUH)
+  , ("vvt", EUP)
+  , ("NT", CRR)
+  , ("Rs", APB)
+  , ("mmZ", IRO)
+  , ("nnT", PSM)
+  , ("mmh", GRT)
+  , ("LT", SAT)
+  , ("llh", PPX)
+  , ("gvv", CTV)
+  , ("mll", PPT)
+  , ("NNs", SOL)
+  , ("kll", RAC)
+  , ("SSC", COI)
+  , ("lzp", FOR)
+  , ("drr", ANN)
+  , ("jmm", DLC)
+  , ("NJ", ATE)
+  , ("mzt", RNC)
+  , ("msk", MAN)
+  , ("rrs", EXG)
+  , ("lqp", ISP)
+  , ("lL", ADM)
+  , ("vvz", APH)
+  , ("CCk", OPT)
+  , ("rrJ", CNV)
+  , ("vll", IPL)
+  , ("lf", ACC)
+  , ("lst", ANP)
+  , ("mqt", ACH)
+  , ("ksk", VEX)
+  , ("gZZ", CRP)
+  , ("ZZg", DEJ)
+  ]
+
+adjunctToBias :: Conjunct -> Maybe Bias
+adjunctToBias conj = BM.lookup conj biasTable
+
+biasToAdjunct :: Bias -> Conjunct
+biasToAdjunct slot = fromJust $ BM.lookupR slot biasTable
