@@ -5,7 +5,7 @@ module Mamkait.Phonology
   , fromUnicode
   , toAscii
   , toUnicode
-  , Conjunct
+  , breakCharacters
   , allPhonemes
   , reps
   , asciiCodes
@@ -15,6 +15,8 @@ module Mamkait.Phonology
   , isVowel
   , consonantReps
   , vowelReps
+  , Conjunct
+  , makeConj
   , isConsonantConjunct
   , isVowelConjunct
   , lexConjuncts
@@ -23,7 +25,11 @@ module Mamkait.Phonology
   , getStress
   , getStresses
   , render
+  , renderConjunct
   , renderHyphenated
+  , vowelForm
+  , altY
+  , altW
   ) where
 
 import Data.Tuple.Select (sel1, sel2, sel3)
@@ -71,11 +77,11 @@ caron = "\x30C"
 underDot = "\x323"
 cedilla = "\x327"
 
-phonemeChart :: [(Phoneme, Char, T.Text)]
+phonemeTable :: [(Phoneme, Char, T.Text)]
 -- 1. Phoneme classification
 -- 2. ASCII input character
 -- 3. Unicode representation
-phonemeChart = [
+phonemeTable = [
   -- Consonant
     (C Unvoiced Labial Stop,                'p', "p")
   , (C Voiced Labial Stop,                  'b', "b")
@@ -123,13 +129,19 @@ phonemeChart = [
 
 
 allPhonemes :: [Phoneme]
-allPhonemes = map sel1 phonemeChart
+allPhonemes = map sel1 phonemeTable
 
 asciiCodes :: [Char]
-asciiCodes = map sel2 phonemeChart
+asciiCodes = map sel2 phonemeTable
 
 reps :: [T.Text]
-reps = map sel3 phonemeChart
+reps = map sel3 phonemeTable
+
+asciiMap :: BM.Bimap Phoneme Char
+asciiMap = BM.fromList $ zip allPhonemes asciiCodes
+
+unicodeMap :: BM.Bimap Phoneme T.Text
+unicodeMap = BM.fromList $ zip allPhonemes reps
 
 isConsonant, isVowel :: Phoneme -> Bool
 isConsonant C {} = True
@@ -145,9 +157,6 @@ vowelReps, consonantReps :: [T.Text]
 vowelReps = map phonemeToUnicode vowels
 consonantReps = map phonemeToUnicode consonants
 
-asciiMap :: BM.Bimap Phoneme Char
-asciiMap = BM.fromList $ zip allPhonemes asciiCodes
-
 phonemeFromAscii :: Char -> Maybe Phoneme
 phonemeFromAscii c = BM.lookupR c asciiMap
 
@@ -159,9 +168,6 @@ phonemeToAscii p = T.singleton $ fromJust $ BM.lookup p asciiMap
 
 toAscii :: PString -> T.Text
 toAscii ps = T.concat $ map phonemeToAscii ps
-
-unicodeMap :: BM.Bimap Phoneme T.Text
-unicodeMap = BM.fromList $ zip allPhonemes reps
 
 phonemeFromUnicode :: T.Text -> Maybe Phoneme
 phonemeFromUnicode c = BM.lookupR c unicodeMap
@@ -184,7 +190,7 @@ toUnicode ps = T.concat $ map phonemeToUnicode ps
 data Conjunct
   = CConj PString -- consonantal conjunct
   | VConj Bool PString -- stress, vocalic conjunct
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 
 stressMarker :: Char
@@ -281,3 +287,33 @@ render = T.concat . map renderConjunct . removeDefaultStress
 
 renderHyphenated :: [Conjunct] -> T.Text
 renderHyphenated = T.intercalate "-" . map renderConjunct . removeDefaultStress
+
+
+-- Vowel Forms
+
+vowelFormTable :: [[T.Text]]
+vowelFormTable =
+  [ ["a",  "A",  "e",  "I",  "i",  "O",  "o",  "U",  "u" ]
+  , ["ai", "au", "ei", "eu", "Ei", "ou", "oi", "iu", "ui"]
+  , ["ia", "iA", "ie", "iE", "Eu", "uO", "uo", "ue", "ua"]
+  , ["ao", "ae", "ea", "eo", "eE", "Oe", "oe", "Oa", "oa"]
+  ]
+
+vowelForm :: Int -> Int -> Conjunct
+vowelForm series form = makeConj $ vowelFormTable !! (series-1) !! (form-1)
+
+altY :: T.Text -> T.Text
+-- Alternate vowel forms to prevent y-i
+altY "ia" = "oA"
+altY "iA" = "uA"
+altY "ie" = "oE"
+altY "iE" = "uE"
+altY s = s
+
+altW :: T.Text -> T.Text
+-- Alternate vowel forms to prevent w-u
+altW "uO" = "iO"
+altW "uo" = "io"
+altW "ue" = "eO"
+altW "ua" = "aO"
+altW s = s

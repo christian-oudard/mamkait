@@ -15,7 +15,7 @@ library:
   - Mamkait.Scratch
   - Mamkait.Error
   - Mamkait.Phonology
-  - Mamkait.Cr
+  - Mamkait.Grammar
 
 executables:
   console:
