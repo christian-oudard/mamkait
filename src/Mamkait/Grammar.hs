@@ -5,7 +5,7 @@ import qualified Data.Text as T
 import qualified Data.Bimap as BM
 import Mamkait.Phonology
   ( Conjunct
-  , makeConj
+  , conjunctFromAscii
   , vowelForm
   )
 
@@ -224,7 +224,7 @@ data Bias
   deriving (Show, Eq, Ord)
 
 biasTable :: BM.Bimap Conjunct Bias
-biasTable = BM.map makeConj $ BM.fromList
+biasTable = BM.map conjunctFromAscii $ BM.fromList
   [ ("RRx", DOL)
   , ("rnZ", SKP)
   , ("ZZv", IPT)

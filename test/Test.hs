@@ -27,8 +27,10 @@ suite = testGroup "test suite" [
            (toUnicode . fromUnicode) exampleUnicodeNFC @?= exampleUnicode
       , testCase "error, unknown character ignored" $
            (toUnicode . fromAscii) "m2al" @?= "mal"
-      , testCase "split conjuncts" $
-          splitConjuncts exampleAscii @?= ["m", "a", "l", "Ei", "TR", "ai", "t"]
+      , testCase "split conjuncts, ascii" $
+          splitConjunctsAscii exampleAscii @?= ["m", "a", "l", "Ei", "TR", "ai", "t"]
+      , testCase "split conjuncts, unicode" $
+          splitConjunctsUnicode exampleUnicode @?= ["m", "a", "l", "e\x308i", "t\x327r\x30C", "ai", "t"]
       , testCase "syllable stress initial" $
           (getStresses . conjunctsFromAscii) "ma;lalai" @?= [True, False, False]
       , testCase "syllable stress final" $
@@ -39,6 +41,12 @@ suite = testGroup "test suite" [
           (getStresses . conjunctsFromAscii) "malalai" @?= [False, True, False]
       , testCase "ascii to unicode via conjuncts" $
           (conjunctsToUnicode . conjunctsFromAscii) exampleAscii @?= "male\x308it\x327r\x30C\&ait"
+      , testCase "ascii to unicode via conjuncts, with syllable stress" $
+          (conjunctsToUnicode . conjunctsFromAscii) "CalO;r" @?= "c\780alo\770r"
+      , testCase "unicode to ascii via conjuncts, NFC normalization" $
+          (conjunctsToAscii . conjunctsFromUnicode) "\269al\244r" @?= "CalO;r"
+      , testCase "unicode to ascii via conjuncts, NFD normalization" $
+          (conjunctsToAscii . conjunctsFromUnicode) "c\780alo\770r" @?= "CalO;r"
       , testCase "conjucts to unicode, hyphenated" $
           (conjunctsToUnicodeHyphenated . conjunctsFromAscii) exampleAscii @?= "m-a-l-e\x308i-t\x327r\x30C-ai-t"
       , testCase "conjuncts to unicode, ultimate stress" $

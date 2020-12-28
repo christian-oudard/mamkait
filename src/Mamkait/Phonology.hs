@@ -16,25 +16,31 @@ module Mamkait.Phonology
   , consonantReps
   , vowelReps
   , Conjunct
-  , makeConj
-  , isConsonantConjunct
-  , isVowelConjunct
-  , conjunctsFromAscii
-  , conjunctsToAscii
-  , splitConjuncts
   , getString
   , getStress
   , getStresses
+  , isConsonantConjunct
+  , isVowelConjunct
+  , conjunctFromAscii
+  , conjunctsFromAscii
+  , conjunctFromUnicode
+  , conjunctsFromUnicode
+  , conjunctToAscii
+  , conjunctsToAscii
   , conjunctToUnicode
   , conjunctsToUnicode
   , conjunctsToUnicodeHyphenated
+  , splitConjunctsAscii
+  , splitConjunctsUnicode
   , vowelForm
   , altY
   , altW
   ) where
 
+
 import Data.Tuple.Select (sel1, sel2, sel3)
 import Data.Maybe (mapMaybe, fromJust)
+import Data.List (groupBy)
 import qualified Data.Bimap as BM
 import qualified Data.Text as T
 import Data.Text.ICU
@@ -197,10 +203,33 @@ data Conjunct
 stressMarker :: Char
 stressMarker = ';'
 
-vowelStress :: T.Text -> T.Text
-vowelStress c
-  | T.length c == 1  = c <> acute -- If the vowel is unaccented, add an acute accent.
-  | otherwise  = T.take 1 c <> circumflex -- The vowel has a diaeresis. Turn it into a circumflex.
+stressVowel :: T.Text -> T.Text
+stressVowel s
+  | len == 1  = vowel <> acute
+  | len == 2  =
+    if accent == diaeresis
+      then vowel <> circumflex
+    else s
+  | otherwise  = s
+  where
+    len = T.length s
+    vowel = T.take 1 s
+    accent = T.takeEnd 1 s
+
+unstressVowel :: T.Text -> T.Text
+unstressVowel s
+  | len == 1  = s
+  | len == 2  =
+    if accent == acute
+      then vowel
+    else if accent == circumflex
+      then vowel <> diaeresis
+    else s
+  | otherwise  = s
+  where
+    len = T.length s
+    vowel = T.take 1 s
+    accent = T.takeEnd 1 s
 
 isConsonantConjunct, isVowelConjunct :: Conjunct -> Bool
 isConsonantConjunct (CConj _) = True
@@ -218,18 +247,23 @@ getStress (VConj stress _) = Just stress
 
 getStresses :: [Conjunct] -> [Bool]
 getStresses = mapMaybe getStress
+
 addStress :: Conjunct -> Conjunct
-removeStress :: Conjunct -> Conjunct
 addStress (VConj _ ps) = VConj True ps
 addStress conj = conj
+
+removeStress :: Conjunct -> Conjunct
 removeStress (VConj _ ps) = VConj False ps
 removeStress conj = conj
 
 conjunctsFromAscii :: T.Text -> [Conjunct]
-conjunctsFromAscii s = addDefaultStress $ map makeConj $ splitConjuncts s
+conjunctsFromAscii s = addDefaultStress $ map conjunctFromAscii $ splitConjunctsAscii s
 
-splitConjuncts :: T.Text -> [T.Text]
-splitConjuncts = T.groupBy sameType
+conjunctsFromUnicode :: T.Text -> [Conjunct]
+conjunctsFromUnicode s = addDefaultStress $ map conjunctFromUnicode $ splitConjunctsUnicode s
+
+splitConjunctsAscii :: T.Text -> [T.Text]
+splitConjunctsAscii = T.groupBy sameType
   where
     sameType :: Char -> Char -> Bool
     sameType a b = isVowel' a == isVowel' b
@@ -238,8 +272,16 @@ splitConjuncts = T.groupBy sameType
       | c == stressMarker  = True -- Count the stress marker as a vowel for splitting purposes.
       | otherwise  = maybe True isVowel $ phonemeFromAscii c
 
-makeConj :: T.Text -> Conjunct
-makeConj s
+splitConjunctsUnicode :: T.Text -> [T.Text]
+splitConjunctsUnicode s = map T.concat $ groupBy sameType $ breakCharacters s
+  where
+    sameType :: T.Text -> T.Text -> Bool
+    sameType a b = isVowel'' a == isVowel'' b
+    isVowel'' :: T.Text -> Bool
+    isVowel'' c = maybe True isVowel $ phonemeFromUnicode $ unstressVowel c
+
+conjunctFromAscii :: T.Text -> Conjunct
+conjunctFromAscii s
   | startsWithConsonant  = CConj ps
   | endsWithStressMarker  = VConj True $ fromAscii $ T.init s
   | otherwise  = VConj False ps
@@ -247,6 +289,18 @@ makeConj s
     ps = fromAscii s
     startsWithConsonant = not (null ps) && isConsonant (head ps)
     endsWithStressMarker = not (T.null s) && T.last s == stressMarker
+
+conjunctFromUnicode :: T.Text -> Conjunct
+conjunctFromUnicode s
+  | startsWithConsonant  = CConj ps
+  | hasStress  = VConj True $ fromUnicode unstressed
+  | otherwise  = VConj False ps
+  where
+    ps = fromUnicode s
+    startsWithConsonant = not (null ps) && isConsonant (head ps)
+    s' = normalize NFD s
+    unstressed = T.concat $ map unstressVowel $ breakCharacters s'
+    hasStress = s' /= unstressed
 
 vowelIndex :: Int -> [Conjunct] -> Maybe Int
 -- vowel index 0 is the ultimate syllable
@@ -292,7 +346,7 @@ conjunctToAscii conj =
 conjunctToUnicode :: Conjunct -> T.Text
 conjunctToUnicode conj =
   case getStress conj of
-    Just True -> T.concat $ modifyNth 0 vowelStress $ breakCharacters s
+    Just True -> T.concat $ modifyNth 0 stressVowel $ breakCharacters s
     _ -> s
   where s = toUnicode $ getString conj
 
@@ -301,7 +355,6 @@ conjunctsToAscii = T.concat . map conjunctToAscii . removeDefaultStress
 
 conjunctsToUnicode :: [Conjunct] -> T.Text
 conjunctsToUnicode = T.concat . map conjunctToUnicode . removeDefaultStress
-
 
 conjunctsToUnicodeHyphenated :: [Conjunct] -> T.Text
 conjunctsToUnicodeHyphenated = T.intercalate "-" . map conjunctToUnicode . removeDefaultStress
@@ -318,7 +371,7 @@ vowelFormTable =
   ]
 
 vowelForm :: Int -> Int -> Conjunct
-vowelForm series form = makeConj $ vowelFormTable !! (series-1) !! (form-1)
+vowelForm series form = conjunctFromAscii $ vowelFormTable !! (series-1) !! (form-1)
 
 altY :: T.Text -> T.Text
 -- Alternate vowel forms to prevent y-i

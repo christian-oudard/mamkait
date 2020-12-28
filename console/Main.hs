@@ -30,13 +30,19 @@ loop = do
   command <- TIO.getLine
   case command of 
     "vr" -> showVrTable
-    _ -> lexFormative command
+    _ -> lexFormatives command
   when (command /= "exit") loop
 
-lexFormative :: T.Text -> IO ()
-lexFormative command = do
-    TIO.putStrLn $ T.unwords $ map (conjunctsToUnicode . conjunctsFromAscii) $ T.words command
-    TIO.putStrLn $ T.unlines $ map (conjunctsToUnicodeHyphenated . conjunctsFromAscii) $ T.words command
+lexFormatives :: T.Text -> IO ()
+lexFormatives command = do
+  let formatives = map conjunctsFromAscii $ T.words command
+  TIO.putStrLn $ T.unwords $ map conjunctsToAscii formatives
+  TIO.putStrLn $ T.unwords $ map conjunctsToUnicode formatives
+  TIO.putStrLn $ T.unwords $ map conjunctsToUnicodeHyphenated formatives
+  let formatives' = map conjunctsFromUnicode $ T.words command
+  TIO.putStrLn $ T.unwords $ map conjunctsToAscii formatives'
+  TIO.putStrLn $ T.unwords $ map conjunctsToUnicode formatives'
+  TIO.putStrLn $ T.unwords $ map conjunctsToUnicodeHyphenated formatives'
 
 showVrTable :: IO ()
 showVrTable = do
