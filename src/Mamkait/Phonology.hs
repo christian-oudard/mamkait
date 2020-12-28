@@ -7,7 +7,7 @@ module Mamkait.Phonology
   , toUnicode
   , breakCharacters
   , allPhonemes
-  , reps
+  , unicodeReps
   , asciiCodes
   , consonants
   , vowels
@@ -19,6 +19,8 @@ module Mamkait.Phonology
   , getString
   , getStress
   , getStresses
+  , stressMarker
+  , stressVowel
   , isConsonantConjunct
   , isVowelConjunct
   , conjunctFromAscii
@@ -30,6 +32,7 @@ module Mamkait.Phonology
   , conjunctToUnicode
   , conjunctsToUnicode
   , conjunctsToUnicodeHyphenated
+  , lexSentence
   , splitConjunctsAscii
   , splitConjunctsUnicode
   , vowelForm
@@ -141,14 +144,14 @@ allPhonemes = map sel1 phonemeTable
 asciiCodes :: [Char]
 asciiCodes = map sel2 phonemeTable
 
-reps :: [T.Text]
-reps = map sel3 phonemeTable
+unicodeReps :: [T.Text]
+unicodeReps = map sel3 phonemeTable
 
 asciiMap :: BM.Bimap Phoneme Char
 asciiMap = BM.fromList $ zip allPhonemes asciiCodes
 
 unicodeMap :: BM.Bimap Phoneme T.Text
-unicodeMap = BM.fromList $ zip allPhonemes reps
+unicodeMap = BM.fromList $ zip allPhonemes unicodeReps
 
 isConsonant, isVowel :: Phoneme -> Bool
 isConsonant C {} = True
@@ -358,6 +361,20 @@ conjunctsToUnicode = T.concat . map conjunctToUnicode . removeDefaultStress
 
 conjunctsToUnicodeHyphenated :: [Conjunct] -> T.Text
 conjunctsToUnicodeHyphenated = T.intercalate "-" . map conjunctToUnicode . removeDefaultStress
+
+lexSentence :: T.Text -> [[Conjunct]]
+lexSentence s =
+  -- Determine whether to parse the sentence as ASCII or Unicode.
+  let
+    asciiAlphabet = stressMarker : asciiCodes
+    asciiCount = T.length $ T.filter (`elem` asciiAlphabet) s
+    stressedVowels = map (stressVowel . phonemeToUnicode) vowels
+    unicodeAlphabet = unicodeReps ++ stressedVowels
+    unicodeCount = length $ filter (`elem` unicodeAlphabet) $ breakCharacters s
+  in
+    if asciiCount > unicodeCount
+      then map conjunctsFromAscii $ T.words s
+      else map conjunctsFromUnicode $ T.words s
 
 
 -- Vowel Forms

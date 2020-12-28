@@ -18,13 +18,13 @@ main = do
   putStrLn title
   putStrLn $ replicate (length title) '-'
   putStrLn ""
-  TIO.putStrLn $ T.intercalate " " reps
+  TIO.putStrLn $ T.intercalate " " unicodeReps
   putStrLn $ intersperse ' ' asciiCodes
-  putStrLn ""
   loop
 
 loop :: IO ()
 loop = do
+  putStrLn ""
   putStr "> "
   hFlush stdout
   command <- TIO.getLine
@@ -35,14 +35,10 @@ loop = do
 
 lexFormatives :: T.Text -> IO ()
 lexFormatives command = do
-  let formatives = map conjunctsFromAscii $ T.words command
-  TIO.putStrLn $ T.unwords $ map conjunctsToAscii formatives
+  -- Show the formative deconstruction.
+  let formatives = lexSentence command
   TIO.putStrLn $ T.unwords $ map conjunctsToUnicode formatives
   TIO.putStrLn $ T.unwords $ map conjunctsToUnicodeHyphenated formatives
-  let formatives' = map conjunctsFromUnicode $ T.words command
-  TIO.putStrLn $ T.unwords $ map conjunctsToAscii formatives'
-  TIO.putStrLn $ T.unwords $ map conjunctsToUnicode formatives'
-  TIO.putStrLn $ T.unwords $ map conjunctsToUnicodeHyphenated formatives'
 
 showVrTable :: IO ()
 showVrTable = do
