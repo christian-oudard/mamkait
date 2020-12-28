@@ -248,27 +248,33 @@ makeConj s
     startsWithConsonant = not (null ps) && isConsonant (head ps)
     endsWithStressMarker = not (T.null s) && T.last s == stressMarker
 
-vowelIndex :: Int -> [Conjunct] -> Int
+vowelIndex :: Int -> [Conjunct] -> Maybe Int
 -- vowel index 0 is the ultimate syllable
 -- vowel index 1 is the penultimate syllable
 -- vowel index 2 is the antepenultimate syllable
-vowelIndex n conjs =
-    let vowelIndices = [ i | (i, conj) <- zip [0..] conjs, isVowelConjunct conj ]
-    in vowelIndices !! (length vowelIndices - 1 - n)
+vowelIndex n conjs
+  | ix >= 0  = Just (vowelIndices !! ix)
+  | otherwise  = Nothing
+  where
+    vowelIndices = [ i | (i, conj) <- zip [0..] conjs, isVowelConjunct conj ]
+    ix = length vowelIndices - 1 - n
 
 addDefaultStress :: [Conjunct] -> [Conjunct]
 -- If the formative is completely unstressed, add default penultimate stress.
-addDefaultStress conjs
-  | length conjs >= 2 && all (==False) (getStresses conjs)
-    = modifyNth (vowelIndex 1 conjs) addStress conjs
-  | otherwise  = conjs
+addDefaultStress conjs =
+  case vowelIndex 1 conjs of
+    Nothing -> conjs
+    Just i ->
+      if all (==False) (getStresses conjs)
+        then modifyNth i addStress conjs
+        else conjs
 
 removeDefaultStress :: [Conjunct] -> [Conjunct]
 -- Never display penultimate stress.
-removeDefaultStress conjs
-  | length conjs >= 2
-    = modifyNth (vowelIndex 1 conjs) removeStress conjs
-  | otherwise  = conjs
+removeDefaultStress conjs =
+  case vowelIndex 1 conjs of
+    Nothing -> conjs
+    Just i -> modifyNth i removeStress conjs
 
 modifyNth :: Int -> (a -> a) -> [a] -> [a]
 modifyNth _ _ [] = []

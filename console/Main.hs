@@ -43,7 +43,7 @@ showVrTable = do
   putStrLn ""
   mapM_ (TIO.putStrLn . showLine) $ BM.toList vrTable
   where
-    showLine (conj, slot) = justifyLeftU 2 " " (conjunctToUnicode conj) <> " " <> T.pack (show slot)
+    showLine (slot, conj) = justifyLeftU 2 " " (conjunctToUnicode conj) <> " " <> T.pack (show slot)
 
 justifyLeftU :: Int -> T.Text -> T.Text -> T.Text
 justifyLeftU k pad t

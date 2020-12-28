@@ -47,8 +47,10 @@ suite = testGroup "test suite" [
           (conjunctsToUnicode . conjunctsFromAscii) "mala;lai" @?= "malalai"
       , testCase "conjuncts to unicode, antepenultimate stress" $
           (conjunctsToUnicode . conjunctsFromAscii) "ma;lalai" @?= "ma\x301lalai"
-      , testCase "conjuncts to unicode, small word" $
+      , testCase "conjuncts to unicode, small word, only consonants" $
           (conjunctsToUnicode . conjunctsFromAscii) "gzz" @?= "gzz"
+      , testCase "conjuncts to unicode, small word, ending in a vowel" $
+          (conjunctsToUnicode . conjunctsFromAscii) "ca" @?= "ca"
       , testCase "conjunct error, stress on consonant ignored" $
           (conjunctsToUnicode . conjunctsFromAscii) "mal;" @?= "mal"
       ]
