@@ -19,14 +19,15 @@ module Mamkait.Phonology
   , makeConj
   , isConsonantConjunct
   , isVowelConjunct
-  , lexConjuncts
+  , conjunctsFromAscii
+  , conjunctsToAscii
   , splitConjuncts
   , getString
   , getStress
   , getStresses
-  , render
-  , renderConjunct
-  , renderHyphenated
+  , conjunctToUnicode
+  , conjunctsToUnicode
+  , conjunctsToUnicodeHyphenated
   , vowelForm
   , altY
   , altW
@@ -217,7 +218,6 @@ getStress (VConj stress _) = Just stress
 
 getStresses :: [Conjunct] -> [Bool]
 getStresses = mapMaybe getStress
-
 addStress :: Conjunct -> Conjunct
 removeStress :: Conjunct -> Conjunct
 addStress (VConj _ ps) = VConj True ps
@@ -225,8 +225,8 @@ addStress conj = conj
 removeStress (VConj _ ps) = VConj False ps
 removeStress conj = conj
 
-lexConjuncts :: T.Text -> [Conjunct]
-lexConjuncts s = addDefaultStress $ map makeConj $ splitConjuncts s
+conjunctsFromAscii :: T.Text -> [Conjunct]
+conjunctsFromAscii s = addDefaultStress $ map makeConj $ splitConjuncts s
 
 splitConjuncts :: T.Text -> [T.Text]
 splitConjuncts = T.groupBy sameType
@@ -276,17 +276,29 @@ modifyNth n f (x:xs)
   | n == 0  = f x : xs
   | otherwise  = x : modifyNth (n-1) f xs
 
-renderConjunct :: Conjunct -> T.Text
-renderConjunct (CConj ps) = toUnicode ps
-renderConjunct (VConj stressed ps)
-  | stressed  = T.concat $ modifyNth 0 vowelStress $ breakCharacters $ toUnicode ps
-  | otherwise  = toUnicode ps
+conjunctToAscii :: Conjunct -> T.Text
+conjunctToAscii conj =
+  case getStress conj of
+    Just True -> s `T.snoc` stressMarker
+    _ -> s
+  where s = toAscii $ getString conj
 
-render :: [Conjunct] -> T.Text
-render = T.concat . map renderConjunct . removeDefaultStress
+conjunctToUnicode :: Conjunct -> T.Text
+conjunctToUnicode conj =
+  case getStress conj of
+    Just True -> T.concat $ modifyNth 0 vowelStress $ breakCharacters s
+    _ -> s
+  where s = toUnicode $ getString conj
 
-renderHyphenated :: [Conjunct] -> T.Text
-renderHyphenated = T.intercalate "-" . map renderConjunct . removeDefaultStress
+conjunctsToAscii :: [Conjunct] -> T.Text
+conjunctsToAscii = T.concat . map conjunctToAscii . removeDefaultStress
+
+conjunctsToUnicode :: [Conjunct] -> T.Text
+conjunctsToUnicode = T.concat . map conjunctToUnicode . removeDefaultStress
+
+
+conjunctsToUnicodeHyphenated :: [Conjunct] -> T.Text
+conjunctsToUnicodeHyphenated = T.intercalate "-" . map conjunctToUnicode . removeDefaultStress
 
 
 -- Vowel Forms

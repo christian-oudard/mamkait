@@ -30,26 +30,26 @@ suite = testGroup "test suite" [
       , testCase "split conjuncts" $
           splitConjuncts exampleAscii @?= ["m", "a", "l", "Ei", "TR", "ai", "t"]
       , testCase "syllable stress initial" $
-          (getStresses . lexConjuncts) "ma;lalai" @?= [True, False, False]
+          (getStresses . conjunctsFromAscii) "ma;lalai" @?= [True, False, False]
       , testCase "syllable stress final" $
-          (getStresses . lexConjuncts) "malalai;" @?= [False, False, True]
+          (getStresses . conjunctsFromAscii) "malalai;" @?= [False, False, True]
       , testCase "syllable stress penultimate, explicit" $
-          (getStresses . lexConjuncts) "mala;lai" @?= [False, True, False]
+          (getStresses . conjunctsFromAscii) "mala;lai" @?= [False, True, False]
       , testCase "syllable stress penultimate, by default" $
-          (getStresses . lexConjuncts) "malalai" @?= [False, True, False]
-      , testCase "lex and render" $
-          (render . lexConjuncts) exampleAscii @?= "male\x308it\x327r\x30C\&ait"
-      , testCase "lex and render, hyphenated" $
-          (renderHyphenated . lexConjuncts) exampleAscii @?= "m-a-l-e\x308i-t\x327r\x30C-ai-t"
-      , testCase "lex and render, ultimate stress" $
-          (render . lexConjuncts) "malalai;" @?= "malala\x301i"
-      , testCase "lex and render, penultimate stress (not shown)" $
-          (render . lexConjuncts) "mala;lai" @?= "malalai"
-      , testCase "lex and render, antepenultimate stress" $
-          (render . lexConjuncts) "ma;lalai" @?= "ma\x301lalai"
-      , testCase "lex and render, small word" $
-          (render . lexConjuncts) "gzz" @?= "gzz"
-      , testCase "lex error, stress on consonant ignored" $
-          (render . lexConjuncts) "mal;" @?= "mal"
+          (getStresses . conjunctsFromAscii) "malalai" @?= [False, True, False]
+      , testCase "ascii to unicode via conjuncts" $
+          (conjunctsToUnicode . conjunctsFromAscii) exampleAscii @?= "male\x308it\x327r\x30C\&ait"
+      , testCase "conjucts to unicode, hyphenated" $
+          (conjunctsToUnicodeHyphenated . conjunctsFromAscii) exampleAscii @?= "m-a-l-e\x308i-t\x327r\x30C-ai-t"
+      , testCase "conjuncts to unicode, ultimate stress" $
+          (conjunctsToUnicode . conjunctsFromAscii) "malalai;" @?= "malala\x301i"
+      , testCase "conjuncts to unicode, penultimate stress (not shown)" $
+          (conjunctsToUnicode . conjunctsFromAscii) "mala;lai" @?= "malalai"
+      , testCase "conjuncts to unicode, antepenultimate stress" $
+          (conjunctsToUnicode . conjunctsFromAscii) "ma;lalai" @?= "ma\x301lalai"
+      , testCase "conjuncts to unicode, small word" $
+          (conjunctsToUnicode . conjunctsFromAscii) "gzz" @?= "gzz"
+      , testCase "conjunct error, stress on consonant ignored" $
+          (conjunctsToUnicode . conjunctsFromAscii) "mal;" @?= "mal"
       ]
   ]

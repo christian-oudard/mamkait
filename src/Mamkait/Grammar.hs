@@ -1,6 +1,7 @@
 module Mamkait.Grammar where
 
 import Data.Maybe (fromJust)
+import qualified Data.Text as T
 import qualified Data.Bimap as BM
 import Mamkait.Phonology
   ( Conjunct
@@ -8,6 +9,8 @@ import Mamkait.Phonology
   , vowelForm
   )
 
+
+-- Slot IV: V_R - Function, Specification, Context
 
 type SlotIV = (Function, Specification, Context)
 
@@ -30,48 +33,133 @@ data Context
   | AMG -- Amalgamative
   deriving (Show, Eq, Ord)
 
-vrTable :: BM.Bimap Conjunct SlotIV
+vrTable :: BM.Bimap SlotIV Conjunct
 vrTable = BM.fromList
-  [ (vowelForm 1 1, (STA, BSC, EXS))
-  , (vowelForm 1 2, (STA, CTE, EXS))
-  , (vowelForm 1 3, (STA, CSV, EXS))
-  , (vowelForm 1 5, (STA, OBJ, EXS)) -- Form 5, "i" not "I".
-  , (vowelForm 1 6, (DYN, BSC, EXS))
-  , (vowelForm 1 7, (DYN, CTE, EXS))
-  , (vowelForm 1 8, (DYN, CSV, EXS))
-  , (vowelForm 1 9, (DYN, OBJ, EXS))
-  , (vowelForm 2 1, (STA, BSC, FNC))
-  , (vowelForm 2 2, (STA, CTE, FNC))
-  , (vowelForm 2 3, (STA, CSV, FNC))
-  , (vowelForm 2 4, (STA, OBJ, FNC))
-  , (vowelForm 2 6, (DYN, BSC, FNC))
-  , (vowelForm 2 7, (DYN, CTE, FNC))
-  , (vowelForm 2 8, (DYN, CSV, FNC))
-  , (vowelForm 2 9, (DYN, OBJ, FNC))
-  , (vowelForm 3 1, (STA, BSC, RPS))
-  , (vowelForm 3 2, (STA, CTE, RPS))
-  , (vowelForm 3 3, (STA, CSV, RPS))
-  , (vowelForm 3 4, (STA, OBJ, RPS))
-  , (vowelForm 3 6, (DYN, BSC, RPS))
-  , (vowelForm 3 7, (DYN, CTE, RPS))
-  , (vowelForm 3 8, (DYN, CSV, RPS))
-  , (vowelForm 3 9, (DYN, OBJ, RPS))
-  , (vowelForm 4 1, (STA, BSC, AMG))
-  , (vowelForm 4 2, (STA, CTE, AMG))
-  , (vowelForm 4 3, (STA, CSV, AMG))
-  , (vowelForm 4 4, (STA, OBJ, AMG))
-  , (vowelForm 4 6, (DYN, BSC, AMG))
-  , (vowelForm 4 7, (DYN, CTE, AMG))
-  , (vowelForm 4 8, (DYN, CSV, AMG))
-  , (vowelForm 4 9, (DYN, OBJ, AMG))
+  [ ((STA, BSC, EXS), vowelForm 1 1)
+  , ((STA, CTE, EXS), vowelForm 1 2)
+  , ((STA, CSV, EXS), vowelForm 1 3)
+  , ((STA, OBJ, EXS), vowelForm 1 5) -- Form 5, "i" not "I".
+  , ((DYN, BSC, EXS), vowelForm 1 6)
+  , ((DYN, CTE, EXS), vowelForm 1 7)
+  , ((DYN, CSV, EXS), vowelForm 1 8)
+  , ((DYN, OBJ, EXS), vowelForm 1 9)
+  , ((STA, BSC, FNC), vowelForm 2 1)
+  , ((STA, CTE, FNC), vowelForm 2 2)
+  , ((STA, CSV, FNC), vowelForm 2 3)
+  , ((STA, OBJ, FNC), vowelForm 2 4)
+  , ((DYN, BSC, FNC), vowelForm 2 6)
+  , ((DYN, CTE, FNC), vowelForm 2 7)
+  , ((DYN, CSV, FNC), vowelForm 2 8)
+  , ((DYN, OBJ, FNC), vowelForm 2 9)
+  , ((STA, BSC, RPS), vowelForm 3 1)
+  , ((STA, CTE, RPS), vowelForm 3 2)
+  , ((STA, CSV, RPS), vowelForm 3 3)
+  , ((STA, OBJ, RPS), vowelForm 3 4)
+  , ((DYN, BSC, RPS), vowelForm 3 6)
+  , ((DYN, CTE, RPS), vowelForm 3 7)
+  , ((DYN, CSV, RPS), vowelForm 3 8)
+  , ((DYN, OBJ, RPS), vowelForm 3 9)
+  , ((STA, BSC, AMG), vowelForm 4 1)
+  , ((STA, CTE, AMG), vowelForm 4 2)
+  , ((STA, CSV, AMG), vowelForm 4 3)
+  , ((STA, OBJ, AMG), vowelForm 4 4)
+  , ((DYN, BSC, AMG), vowelForm 4 6)
+  , ((DYN, CTE, AMG), vowelForm 4 7)
+  , ((DYN, CSV, AMG), vowelForm 4 8)
+  , ((DYN, OBJ, AMG), vowelForm 4 9)
   ]
 
-vrToSlotIV :: Conjunct -> Maybe SlotIV
-vrToSlotIV conj = BM.lookup conj vrTable
-
 slotIVToVr :: SlotIV -> Conjunct
-slotIVToVr slot = fromJust $ BM.lookupR slot vrTable
+slotIVToVr slot = fromJust $ BM.lookup slot vrTable
 
+vrToSlotIV :: Conjunct -> Maybe SlotIV
+vrToSlotIV conj = BM.lookupR conj vrTable
+
+
+-- Slot VI: C_A - Configuration, Extension, Affiliation, Perspective, Essence
+data Configuration
+  = UNI -- Uniplex
+  | DSS -- Duplex Similar Separate
+  | DSC -- Duplex Similar Connected
+  | DSF -- Duplex Similar Fused
+  | DDS -- Duplex Dissimilar Separate
+  | DDC -- Duplex Dissimilar Connected
+  | DDF -- Duplex Dissimilar fused
+  | DFS -- Duplex Fuzzy Separate
+  | DFC -- Duplex Fuzzy Connected
+  | DFF -- Duplex Fuzzy Fused
+  | MSS -- Multiplex Similar Separate
+  | MSC -- Multiplex Similar Connected
+  | MSF -- Multiplex Similar Fused
+  | MDS -- Multiplex Dissimilar Separate
+  | MDC -- Multiplex Dissimilar Connected
+  | MDF -- Multiplex Dissimilar Fused
+  | MFS -- Multiplex Fuzzy Separate
+  | MFC -- Multiplex Fuzzy Connected
+  | MFF -- Multiplex Fuzzy Fused
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+
+ca1Table :: BM.Bimap Configuration T.Text
+ca1Table = BM.fromList
+  [ (UNI, "")
+  , (DSS, "rt")
+  , (DSC, "rk")
+  , (DSF, "rp")
+  , (DDS, "rn")
+  , (DDC, "rN")
+  , (DDF, "rm")
+  , (DFS, "Rt")
+  , (DFC, "Rk")
+  , (DFF, "Rp")
+  , (MSS, "t")
+  , (MSC, "k")
+  , (MSF, "p")
+  , (MDS, "n")
+  , (MDC, "N")
+  , (MDF, "m")
+  , (MFS, "lt")
+  , (MFC, "lk")
+  , (MFF, "lp")
+  ]
+
+-- data Extension
+-- data Affiliation
+
+data Perspective
+  = M -- Monadic
+  | P -- Polyadic
+  | N -- Nomic
+  | A -- Abstract
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+data Essence
+  = NRM -- Normal
+  | RPV -- Representative
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+
+ca4Table :: BM.Bimap (Perspective, Essence) (T.Text, T.Text)
+ca4Table = BM.fromList
+  [ ((M, NRM), ("l", ""))
+  , ((P, NRM), ("r", "r"))
+  , ((N, NRM), ("v", "w"))
+  , ((A, NRM), ("z", "y"))
+  , ((M, RPV), ("R", "R"))
+  , ((P, RPV), ("tL", "l"))
+  , ((N, RPV), ("lm", "m"))
+  , ((A, RPV), ("ln", "n"))
+  ]
+
+constructCa :: Configuration -> Perspective -> Essence -> T.Text
+constructCa c p e = ca1 <> ca4
+  where
+    ca1 = fromJust $ BM.lookup c ca1Table
+    ca4 = if c == UNI then fst ca4' else snd ca4'
+    ca4' = fromJust $ BM.lookup (p, e) ca4Table
+
+
+-- Bias Adjuncts
 
 data Bias
   = DOL -- Dolorous

@@ -35,15 +35,15 @@ loop = do
 
 lexFormative :: T.Text -> IO ()
 lexFormative command = do
-    TIO.putStrLn $ T.unwords $ map (render . lexConjuncts) $ T.words command
-    TIO.putStrLn $ T.unlines $ map (renderHyphenated . lexConjuncts) $ T.words command
+    TIO.putStrLn $ T.unwords $ map (conjunctsToUnicode . conjunctsFromAscii) $ T.words command
+    TIO.putStrLn $ T.unlines $ map (conjunctsToUnicodeHyphenated . conjunctsFromAscii) $ T.words command
 
 showVrTable :: IO ()
 showVrTable = do
   putStrLn ""
   mapM_ (TIO.putStrLn . showLine) $ BM.toList vrTable
   where
-    showLine (conj, slot) = justifyLeftU 2 " " (renderConjunct conj) <> " " <> T.pack (show slot)
+    showLine (conj, slot) = justifyLeftU 2 " " (conjunctToUnicode conj) <> " " <> T.pack (show slot)
 
 justifyLeftU :: Int -> T.Text -> T.Text -> T.Text
 justifyLeftU k pad t
