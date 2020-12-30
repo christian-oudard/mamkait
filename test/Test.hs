@@ -58,4 +58,4 @@ suite = testGroup "test suite" [
   ]
 
 caClusters :: [T.Text]
-caClusters = map (substituteAllomorphic forwardSubs . constructCa) allOfCa
+caClusters = map constructCa allSlotV

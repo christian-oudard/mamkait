@@ -15,7 +15,7 @@ import Mamkait.Phonotaxis
 
 
 checkCa :: IO ()
-checkCa = mapM_ out allOfCa
+checkCa = mapM_ out allSlotVI
   where
     out (co, ex, af, pe, es) = do
       if not $ permissible $ fromAscii ca'

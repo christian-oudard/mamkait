@@ -87,6 +87,8 @@ vrToSlotIV conj = BM.lookupR conj vrTable
 -- Slot VI: C_A - Configuration, Extension, Affiliation, Perspective, Essence
 
 type SlotVI = (Configuration, Extension, Affiliation, Perspective, Essence)
+allSlotVI :: [(Configuration, Extension, Affiliation, Perspective, Essence)]
+allSlotVI = (,,,,) <$> allOf <*> allOf <*> allOf <*> allOf <*> allOf
 
 data Configuration
   = UNI -- Uniplex
@@ -192,9 +194,19 @@ ca4Table = BM.fromList
   , ((A, RPV), ("ln", "n"))
   ]
 
+caTable :: BM.Bimap SlotVI Conjunct
+caTable = BM.fromList $ zip allSlotVI $ map (conjunctFromAscii . constructCa) allSlotVI
+
+slotVIToCa :: SlotVI -> Conjunct
+slotVIToCa slot = fromJust $ BM.lookup slot caTable
+
+caToSlotVI :: Conjunct -> Maybe SlotVI
+caToSlotVI conj = BM.lookupR conj caTable
+
 constructCa :: SlotVI -> T.Text
-constructCa (co, ex, af, pe, es) = ca1 <> ca2 <> ca3' <> ca4'
+constructCa (co, ex, af, pe, es) = substituteAllomorphic forwardSubs ca
   where
+    ca = ca1 <> ca2 <> ca3' <> ca4'
     ca1 = fromJust $ BM.lookup co ca1Table
     ca2 = fromJust $ BM.lookup ex ca2Table
     ca3 = fromJust $ BM.lookup af ca3Table
@@ -249,18 +261,6 @@ substitutions =
   , ("Rpp", "Rb")
   ]
 
-allOfCa :: [(Configuration, Extension, Affiliation, Perspective, Essence)]
-allOfCa = (,,,,) <$> allOf <*> allOf <*> allOf <*> allOf <*> allOf
-
-  -- r/v substitution
-  -- , ("Rtr", "Rtv")
-  -- , ("Rkr", "Rkv")
-  -- , ("Rpr", "Rpv")
-  -- , ("Rtr", "Rtv")
-  -- , ("Rkr", "Rkv")
-  -- , ("Rpr", "Rpv")
-  -- , ("Rtsr", "Rcv")
-  -- , ("RNkr", "RNzv")
 
 -- Bias Adjuncts
 
