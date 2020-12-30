@@ -1,9 +1,11 @@
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.List (nub)
 import qualified Data.Text as T
 import Mamkait.Phonology
 import Mamkait.Grammar
+import Mamkait.Phonotaxis
 
 main :: IO ()
 main = defaultMain suite
@@ -17,13 +19,13 @@ suite :: TestTree
 suite = testGroup "test suite" [
     testGroup "unittests"
       [ testCase "ascii to unicode conversions" $ do
-           (toAscii . fromAscii) exampleAscii @?= exampleAscii
-           (toUnicode . fromAscii) exampleAscii @?= exampleUnicode
-           (toAscii . fromUnicode) exampleUnicode @?= exampleAscii
-           (toUnicode . fromUnicode) exampleUnicode @?= exampleUnicode
-           (toUnicode . fromUnicode) exampleUnicodeNFC @?= exampleUnicode
+          (toAscii . fromAscii) exampleAscii @?= exampleAscii
+          (toUnicode . fromAscii) exampleAscii @?= exampleUnicode
+          (toAscii . fromUnicode) exampleUnicode @?= exampleAscii
+          (toUnicode . fromUnicode) exampleUnicode @?= exampleUnicode
+          (toUnicode . fromUnicode) exampleUnicodeNFC @?= exampleUnicode
       , testCase "conversion error, unknown character ignored" $
-           (toUnicode . fromAscii) "m2al" @?= "mal"
+          (toUnicode . fromAscii) "m2al" @?= "mal"
       , testCase "split conjuncts" $ do
           splitConjunctsAscii exampleAscii @?= ["m", "a", "l", "Ei", "TR", "ai", "t"]
           splitConjunctsUnicode exampleUnicode @?= ["m", "a", "l", "e\x308i", "t\x327r\x30C", "ai", "t"]
@@ -48,5 +50,12 @@ suite = testGroup "test suite" [
           substituteAllomorphic forwardSubs "tsy" @?= "j"
           substituteAllomorphic reverseSubs "j" @?= "tsy"
           substituteAllomorphic forwardSubs "Rkr" @?= "Rkv"
+      , testCase "C_A non-ambiguity" $
+          length (nub caClusters) @?= (length caClusters)
+      , testCase "C_A phonotaxis" $
+          assert $ all (==True) $ map (permissible . fromAscii) caClusters
       ]
   ]
+
+caClusters :: [T.Text]
+caClusters = map (substituteAllomorphic forwardSubs . constructCa) allOfCa

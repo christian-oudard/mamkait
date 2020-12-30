@@ -13,6 +13,9 @@ import Mamkait.Phonology
   , vowelForm
   )
 
+allOf :: (Enum a, Bounded a) => [a]
+allOf = [minBound .. maxBound]
+
 
 -- Slot IV: V_R - Function, Specification, Context
 
@@ -36,6 +39,7 @@ data Context
   | RPS -- Representational
   | AMG -- Amalgamative
   deriving (Show, Eq, Ord)
+
 
 vrTable :: BM.Bimap SlotIV Conjunct
 vrTable = BM.fromList
@@ -243,6 +247,12 @@ substitutions =
   , ("Rtt", "Rd")
   , ("Rkk", "Rg")
   , ("Rpp", "Rb")
+  ]
+
+allOfCa :: [(Configuration, Extension, Affiliation, Perspective, Essence)]
+allOfCa = (,,,,) <$> allOf <*> allOf <*> allOf <*> allOf <*> allOf
+
+  -- r/v substitution
   -- , ("Rtr", "Rtv")
   -- , ("Rkr", "Rkv")
   -- , ("Rpr", "Rpv")
@@ -251,8 +261,6 @@ substitutions =
   -- , ("Rpr", "Rpv")
   -- , ("Rtsr", "Rcv")
   -- , ("RNkr", "RNzv")
-  ]
-
 
 -- Bias Adjuncts
 
