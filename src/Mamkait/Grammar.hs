@@ -195,7 +195,8 @@ ca4Table = BM.fromList
   ]
 
 caTable :: BM.Bimap SlotVI Conjunct
-caTable = BM.fromList $ zip allSlotVI $ map (conjunctFromAscii . constructCa) allSlotVI
+caTable = BM.fromList $ zip allSlotVI $ map construct allSlotVI
+  where construct = conjunctFromAscii . substituteAllomorphic . constructCa
 
 slotVIToCa :: SlotVI -> Conjunct
 slotVIToCa slot = fromJust $ BM.lookup slot caTable
@@ -204,46 +205,40 @@ caToSlotVI :: Conjunct -> Maybe SlotVI
 caToSlotVI conj = BM.lookupR conj caTable
 
 constructCa :: SlotVI -> T.Text
-constructCa (co, ex, af, pe, es) = substituteAllomorphic forwardSubs ca
+constructCa (co, ex, af, pe, es) = ca1 <> ca2 <> ca3' <> ca4''
   where
-    ca = ca1 <> ca2 <> ca3' <> ca4'
     ca1 = fromJust $ BM.lookup co ca1Table
     ca2 = fromJust $ BM.lookup ex ca2Table
     ca3 = fromJust $ BM.lookup af ca3Table
-    ca3' = if co == UNI && ex == DEL then fst ca3 else snd ca3
+    ca3' = if T.null ca1 && T.null ca2 then fst ca3 else snd ca3
     ca4 = fromJust $ BM.lookup (pe, es) ca4Table
-    ca4' = if co == UNI && ex == DEL && af == CSL then fst ca4 else snd ca4
+    ca4' = if T.null ca1 && T.null ca2 && T.null ca3' then fst ca4 else snd ca4
+    ca4''
+      | T.take 1 ca1 == "R" && ca4' == "r"  = "v"
+      | T.take 1 ca2 /= "" && ca3' /= "" && ca4' == "m"  = "h" 
+      | T.take 1 ca2 /= "" && ca3' /= "" && ca4' == "n"  = "q" 
+      | otherwise  = ca4'
 
-substituteAllomorphic :: [(Regex, Replace)] -> T.Text -> T.Text
-substituteAllomorphic subs str = foldl (\s (a, b) -> replace a b s) str subs
+substituteAllomorphic :: T.Text -> T.Text
+substituteAllomorphic str = foldl (\s (a, b) -> replace a b s) str substitutions
 
-forwardSubs, reverseSubs :: [(Regex, Replace)]
-forwardSubs = makeReplacements substitutions
-reverseSubs = makeReplacements $ map swap $ reverse substitutions
-
-makeReplacements :: [(T.Text, T.Text)] -> [(Regex, Replace)]
-makeReplacements = map construct
-  where
-    construct (a, b) = (regex [] a, rtext b')
-      where b' = T.filter (`elem` asciiCodes) b -- Don't put regex syntax in replacements.
-
-substitutions :: [(T.Text, T.Text)]
+substitutions :: [(Regex, Replace)]
 substitutions =
   [ ("ts", "c")
   , ("tS", "C")
   , ("tT", "D")
   , ("np", "mv")
   , ("Nk", "Nz")
-  , ("nf(?=.)", "v(?=.)")
+  , ("nf(?=.)", "v")
   , ("tf", "fs")
   , ("kf", "fS")
   , ("Ny", "NZ")
   , ("qy", "Z")
   , ("cy", "j")
   , ("Cy", "J")
-  , ("^tt", "^nd")
-  , ("^kk", "^ng")
-  , ("^pp", "^mb")
+  , ("^tt", "nd")
+  , ("^kk", "ng")
+  , ("^pp", "mb")
   , ("nn", "nz")
   , ("mm", "mz")
   , ("ltt", "ld")

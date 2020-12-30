@@ -47,9 +47,9 @@ suite = testGroup "test suite" [
           (conjunctsToUnicode . conjunctsFromAscii) "ca" @?= "ca"
           (conjunctsToUnicode . conjunctsFromAscii) "mal;" @?= "mal"
       , testCase "allomorphic substitution" $ do
-          substituteAllomorphic forwardSubs "tsy" @?= "j"
-          substituteAllomorphic reverseSubs "j" @?= "tsy"
-          substituteAllomorphic forwardSubs "Rkr" @?= "Rkv"
+          substituteAllomorphic "tsy" @?= "j"
+      , testCase "C_A r/v substitution" $
+          substituteAllomorphic (constructCa (DFC, DEL, CSL, P, NRM)) @?= "Rkv"
       , testCase "C_A non-ambiguity" $
           length (nub caClusters) @?= (length caClusters)
       , testCase "C_A phonotaxis" $
@@ -58,4 +58,4 @@ suite = testGroup "test suite" [
   ]
 
 caClusters :: [T.Text]
-caClusters = map constructCa allSlotV
+caClusters = map (substituteAllomorphic . constructCa) allSlotVI
