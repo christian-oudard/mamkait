@@ -1,45 +1,4 @@
-module Mamkait.Phonology
-  ( Phoneme
-  , PString
-  , fromAscii
-  , fromUnicode
-  , toAscii
-  , toUnicode
-  , breakCharacters
-  , allPhonemes
-  , unicodeReps
-  , asciiCodes
-  , consonants
-  , vowels
-  , isConsonant
-  , isVowel
-  , consonantReps
-  , vowelReps
-  , Conjunct
-  , getString
-  , getStress
-  , getStresses
-  , stressMarker
-  , stressVowel
-  , isConsonantConjunct
-  , isVowelConjunct
-  , conjunctFromAscii
-  , conjunctsFromAscii
-  , conjunctFromUnicode
-  , conjunctsFromUnicode
-  , conjunctToAscii
-  , conjunctsToAscii
-  , conjunctToUnicode
-  , conjunctsToUnicode
-  , conjunctsToUnicodeHyphenated
-  , lexSentence
-  , splitConjunctsAscii
-  , splitConjunctsUnicode
-  , vowelForm
-  , altY
-  , altW
-  ) where
-
+module Mamkait.Phonology where
 
 import Data.Tuple.Select (sel1, sel2, sel3)
 import Data.Maybe (mapMaybe, fromJust)
@@ -137,7 +96,6 @@ phonemeTable = [
   , (V Unrounded Back Low,                  'A', "a" <> diaeresis)
   ]
 
-
 allPhonemes :: [Phoneme]
 allPhonemes = map sel1 phonemeTable
 
@@ -201,7 +159,6 @@ data Conjunct
   = CConj PString -- consonantal conjunct
   | VConj Bool PString -- stress, vocalic conjunct
   deriving (Show, Eq, Ord)
-
 
 stressMarker :: Char
 stressMarker = ';'

@@ -1,11 +1,15 @@
 module Mamkait.Grammar where
 
+import Data.Tuple (swap)
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
+import Data.Text.ICU (Regex, regex)
+import Data.Text.ICU.Replace (Replace, replace, rtext)
 import qualified Data.Bimap as BM
 import Mamkait.Phonology
   ( Conjunct
   , conjunctFromAscii
+  , asciiCodes
   , vowelForm
   )
 
@@ -77,6 +81,9 @@ vrToSlotIV conj = BM.lookupR conj vrTable
 
 
 -- Slot VI: C_A - Configuration, Extension, Affiliation, Perspective, Essence
+
+type SlotVI = (Configuration, Extension, Affiliation, Perspective, Essence)
+
 data Configuration
   = UNI -- Uniplex
   | DSS -- Duplex Similar Separate
@@ -97,6 +104,34 @@ data Configuration
   | MFS -- Multiplex Fuzzy Separate
   | MFC -- Multiplex Fuzzy Connected
   | MFF -- Multiplex Fuzzy Fused
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+data Extension
+  = DEL -- Delimitive
+  | PRX -- Proximal
+  | ICP -- Incipient
+  | ATV -- Attenuative
+  | GRA -- Graduative
+  | DPL -- Depletive
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+data Affiliation
+  = CSL -- Consolidative
+  | ASO -- Associative
+  | COA -- Coalescent
+  | VAR -- Variative
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+data Perspective
+  = M -- Monadic
+  | P -- Polyadic
+  | N -- Nomic
+  | A -- Abstract
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+data Essence
+  = NRM -- Normal
+  | RPV -- Representative
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 
@@ -123,21 +158,23 @@ ca1Table = BM.fromList
   , (MFF, "lp")
   ]
 
--- data Extension
--- data Affiliation
+ca2Table :: BM.Bimap Extension T.Text
+ca2Table = BM.fromList
+  [ (DEL, "")
+  , (PRX, "s")
+  , (ICP, "S")
+  , (ATV, "f")
+  , (GRA, "T")
+  , (DPL, "q")
+  ]
 
-data Perspective
-  = M -- Monadic
-  | P -- Polyadic
-  | N -- Nomic
-  | A -- Abstract
-  deriving (Show, Eq, Ord, Enum, Bounded)
-
-data Essence
-  = NRM -- Normal
-  | RPV -- Representative
-  deriving (Show, Eq, Ord, Enum, Bounded)
-
+ca3Table :: BM.Bimap Affiliation (T.Text, T.Text)
+ca3Table = BM.fromList
+  [ (CSL, ("", ""))
+  , (ASO, ("d", "t"))
+  , (COA, ("g", "k"))
+  , (VAR, ("b", "p"))
+  ]
 
 ca4Table :: BM.Bimap (Perspective, Essence) (T.Text, T.Text)
 ca4Table = BM.fromList
@@ -151,12 +188,70 @@ ca4Table = BM.fromList
   , ((A, RPV), ("ln", "n"))
   ]
 
-constructCa :: Configuration -> Perspective -> Essence -> T.Text
-constructCa c p e = ca1 <> ca4
+constructCa :: SlotVI -> T.Text
+constructCa (co, ex, af, pe, es) = ca1 <> ca2 <> ca3' <> ca4'
   where
-    ca1 = fromJust $ BM.lookup c ca1Table
-    ca4 = if c == UNI then fst ca4' else snd ca4'
-    ca4' = fromJust $ BM.lookup (p, e) ca4Table
+    ca1 = fromJust $ BM.lookup co ca1Table
+    ca2 = fromJust $ BM.lookup ex ca2Table
+    ca3 = fromJust $ BM.lookup af ca3Table
+    ca3' = if co == UNI && ex == DEL then fst ca3 else snd ca3
+    ca4 = fromJust $ BM.lookup (pe, es) ca4Table
+    ca4' = if co == UNI && ex == DEL && af == CSL then fst ca4 else snd ca4
+
+substituteAllomorphic :: [(Regex, Replace)] -> T.Text -> T.Text
+substituteAllomorphic subs str = foldl (\s (a, b) -> replace a b s) str subs
+
+forwardSubs, reverseSubs :: [(Regex, Replace)]
+forwardSubs = makeReplacements substitutions
+reverseSubs = makeReplacements $ map swap $ reverse substitutions
+
+makeReplacements :: [(T.Text, T.Text)] -> [(Regex, Replace)]
+makeReplacements = map construct
+  where
+    construct (a, b) = (regex [] a, rtext b')
+      where b' = T.filter (`elem` asciiCodes) b -- Don't put regex syntax in replacements.
+
+substitutions :: [(T.Text, T.Text)]
+substitutions =
+  [ ("ts", "c")
+  , ("tS", "C")
+  , ("tT", "D")
+  , ("np", "mv")
+  , ("Nk", "Nz")
+  , ("nf(?=.)", "v(?=.)")
+  , ("tf", "fs")
+  , ("kf", "fS")
+  , ("Ny", "NZ")
+  , ("qy", "Z")
+  , ("cy", "j")
+  , ("Cy", "J")
+  , ("^tt", "^nd")
+  , ("^kk", "^ng")
+  , ("^pp", "^mb")
+  , ("nn", "nz")
+  , ("mm", "mz")
+  , ("ltt", "ld")
+  , ("lkk", "lg")
+  , ("lpp", "lb")
+  , ("rnm", "nZ")
+  , ("rmn", "mZ")
+  , ("rtt", "rd")
+  , ("rkk", "rg")
+  , ("rpp", "rb")
+  , ("rNm", "Nv")
+  , ("rNn", "nD")
+  , ("Rtt", "Rd")
+  , ("Rkk", "Rg")
+  , ("Rpp", "Rb")
+  -- , ("Rtr", "Rtv")
+  -- , ("Rkr", "Rkv")
+  -- , ("Rpr", "Rpv")
+  -- , ("Rtr", "Rtv")
+  -- , ("Rkr", "Rkv")
+  -- , ("Rpr", "Rpv")
+  -- , ("Rtsr", "Rcv")
+  -- , ("RNkr", "RNzv")
+  ]
 
 
 -- Bias Adjuncts

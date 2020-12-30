@@ -4,10 +4,11 @@ dependencies:
   - base == 4.*
   - containers
   - mtl
-  - text
-  - text-icu
   - tuple
   - bimap
+  - text
+  - text-icu
+  - text-regex-replace
 
 library:
   source-dirs: src/
@@ -15,6 +16,7 @@ library:
   - Mamkait.Scratch
   - Mamkait.Error
   - Mamkait.Phonology
+  - Mamkait.Phonotaxis
   - Mamkait.Grammar
 
 executables:
