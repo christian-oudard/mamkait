@@ -16,6 +16,23 @@ import Mamkait.Phonology
 allOf :: (Enum a, Bounded a) => [a]
 allOf = [minBound .. maxBound]
 
+-- Formatives
+
+type Formative = (Root, SlotIV, SlotVI)
+
+composeFormative :: Formative -> [Conjunct]
+composeFormative (Root root, slot4, slot6) = [root, slotIVToVr slot4, slotVIToCa slot6]
+
+parseFormative :: [Conjunct] -> Maybe Formative
+parseFormative [cr, vr, ca] = (,,) <$> Just (Root cr) <*> vrToSlotIV vr <*> caToSlotVI ca
+parseFormative _ = Nothing
+
+
+-- Slot III: Root
+
+newtype Root = Root Conjunct
+  deriving (Show, Eq)
+
 
 -- Slot IV: V_R - Function, Specification, Context
 
