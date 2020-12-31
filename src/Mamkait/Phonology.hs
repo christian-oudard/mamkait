@@ -2,6 +2,7 @@ module Mamkait.Phonology where
 
 import Data.Tuple.Select (sel1, sel2, sel3)
 import Data.Maybe (mapMaybe, fromJust)
+import Data.Either (isRight, rights)
 import Data.List (groupBy)
 import qualified Data.Bimap as BM
 import qualified Data.Text as T
@@ -112,8 +113,8 @@ unicodeMap :: BM.Bimap Phoneme T.Text
 unicodeMap = BM.fromList $ zip allPhonemes unicodeReps
 
 isConsonant, isVowel :: Phoneme -> Bool
-isConsonant C {} = True
-isConsonant V {} = False
+isConsonant = not . isVowel
+isVowel (C Unvoiced Glottal Stop) = True -- The glottal stop is part of vowel clusters.
 isVowel C {} = False
 isVowel V {} = True
 
@@ -155,10 +156,15 @@ toUnicode ps = T.concat $ map phonemeToUnicode ps
 
 -- Conjuncts and stress markers
 
-data Conjunct
-  = CConj PString -- consonantal conjunct
-  | VConj Bool PString -- stress, vocalic conjunct
+type Conjunct = Either CConj VConj
+
+newtype CConj = CConj PString
   deriving (Show, Eq, Ord)
+
+data VConj = VConj PString Stress Glottal
+  deriving (Show, Eq, Ord)
+type Stress = Bool
+type Glottal = Bool
 
 stressMarker :: Char
 stressMarker = ';'
@@ -191,30 +197,25 @@ unstressVowel s
     vowel = T.take 1 s
     accent = T.takeEnd 1 s
 
-isConsonantConjunct, isVowelConjunct :: Conjunct -> Bool
-isConsonantConjunct (CConj _) = True
-isConsonantConjunct (VConj _ _) = False
-isVowelConjunct (CConj _) = False
-isVowelConjunct (VConj _ _) = True
-
 getString :: Conjunct -> PString
-getString (CConj ps) = ps
-getString (VConj _ ps) = ps
+getString (Left (CConj ps)) = ps
+getString (Right (VConj ps _ _)) = ps
 
-getStress :: Conjunct -> Maybe Bool
-getStress (CConj _) = Nothing
-getStress (VConj stress _) = Just stress
+getStress :: VConj -> Stress
+getStress (VConj _ stress _) = stress
 
-getStresses :: [Conjunct] -> [Bool]
-getStresses = mapMaybe getStress
+getStresses :: [Conjunct] -> [Stress]
+getStresses = map getStress . rights
 
-addStress :: Conjunct -> Conjunct
-addStress (VConj _ ps) = VConj True ps
-addStress conj = conj
+addStress, removeStress :: Conjunct -> Conjunct
+addStress (Right (VConj ps _ g)) = Right $ VConj ps True g
+addStress c = c
+removeStress (Right (VConj ps _ g)) = Right $ VConj ps False g
+removeStress c = c
 
-removeStress :: Conjunct -> Conjunct
-removeStress (VConj _ ps) = VConj False ps
-removeStress conj = conj
+addGlottal, removeGlottal :: VConj -> VConj
+addGlottal (VConj ps s _) = VConj ps s True
+removeGlottal (VConj ps s _) = VConj ps s False
 
 conjunctsFromAscii :: T.Text -> [Conjunct]
 conjunctsFromAscii s = addDefaultStress $ map conjunctFromAscii $ splitConjunctsAscii s
@@ -229,38 +230,44 @@ splitConjunctsAscii = T.groupBy sameType
     sameType a b = isVowel' a == isVowel' b
     isVowel' :: Char -> Bool
     isVowel' c
-      | c == stressMarker  = True -- Count the stress marker as a vowel for splitting purposes.
+      -- Count the stress marker as a vowel for splitting purposes.
+      | c == stressMarker  = True
       | otherwise  = maybe True isVowel $ phonemeFromAscii c
 
 splitConjunctsUnicode :: T.Text -> [T.Text]
 splitConjunctsUnicode s = map T.concat $ groupBy sameType $ breakCharacters s
   where
     sameType :: T.Text -> T.Text -> Bool
-    sameType a b = isVowel'' a == isVowel'' b
-    isVowel'' :: T.Text -> Bool
-    isVowel'' c = maybe True isVowel $ phonemeFromUnicode $ unstressVowel c
+    sameType a b = isVowel' a == isVowel' b
+    isVowel' :: T.Text -> Bool
+    isVowel' c = maybe True isVowel $ phonemeFromUnicode $ unstressVowel c
 
 conjunctFromAscii :: T.Text -> Conjunct
 conjunctFromAscii s
-  | startsWithConsonant  = CConj ps
-  | endsWithStressMarker  = VConj True $ fromAscii $ T.init s
-  | otherwise  = VConj False ps
+  | startsWithConsonant ps  = Left $ CConj ps
+  | otherwise  = Right $ VConj ps' hasStress hasGlottal 
   where
     ps = fromAscii s
-    startsWithConsonant = not (null ps) && isConsonant (head ps)
-    endsWithStressMarker = not (T.null s) && T.last s == stressMarker
+    ps' = fromAscii $
+      T.replace "\'" "" $ -- Remove glottal stop.
+      T.replace (T.singleton stressMarker) "" s -- Remove stress.
+    hasStress = not (T.null s) && T.last s == stressMarker
+    hasGlottal = C Unvoiced Glottal Stop `elem` ps
 
 conjunctFromUnicode :: T.Text -> Conjunct
 conjunctFromUnicode s
-  | startsWithConsonant  = CConj ps
-  | hasStress  = VConj True $ fromUnicode unstressed
-  | otherwise  = VConj False ps
+  | startsWithConsonant ps  = Left $ CConj ps
+  | otherwise  = Right $ VConj ps' hasStress hasGlottal 
   where
     ps = fromUnicode s
-    startsWithConsonant = not (null ps) && isConsonant (head ps)
-    s' = normalize NFD s
-    unstressed = T.concat $ map unstressVowel $ breakCharacters s'
-    hasStress = s' /= unstressed
+    s' = normalize NFD s -- Normalize to unicode combining accents.
+    s'' = T.concat $ map unstressVowel $ breakCharacters s' -- Remove stress.
+    ps' = fromUnicode $ T.replace "\'" "" $ s'' -- Remove glottal stop.
+    hasStress = s' /= s''
+    hasGlottal = C Unvoiced Glottal Stop `elem` ps
+
+startsWithConsonant :: PString -> Bool
+startsWithConsonant ps = not (null ps) && isConsonant (head ps)
 
 vowelIndex :: Int -> [Conjunct] -> Maybe Int
 -- vowel index 0 is the ultimate syllable
@@ -270,7 +277,7 @@ vowelIndex n conjs
   | ix >= 0  = Just (vowelIndices !! ix)
   | otherwise  = Nothing
   where
-    vowelIndices = [ i | (i, conj) <- zip [0..] conjs, isVowelConjunct conj ]
+    vowelIndices = [ i | (i, conj) <- zip [0..] conjs, isRight conj ]
     ix = length vowelIndices - 1 - n
 
 addDefaultStress :: [Conjunct] -> [Conjunct]
@@ -298,15 +305,15 @@ modifyNth n f (x:xs)
 
 conjunctToAscii :: Conjunct -> T.Text
 conjunctToAscii conj =
-  case getStress conj of
-    Just True -> s `T.snoc` stressMarker
+  case getStresses [conj] of
+    [True] -> s `T.snoc` stressMarker
     _ -> s
   where s = toAscii $ getString conj
 
 conjunctToUnicode :: Conjunct -> T.Text
 conjunctToUnicode conj =
-  case getStress conj of
-    Just True -> T.concat $ modifyNth 0 stressVowel $ breakCharacters s
+  case getStresses [conj] of
+    [True] -> T.concat $ modifyNth 0 stressVowel $ breakCharacters s
     _ -> s
   where s = toUnicode $ getString conj
 
@@ -362,3 +369,6 @@ altW "uo" = "io"
 altW "ue" = "eO"
 altW "ua" = "aO"
 altW s = s
+
+isDiphthong :: Conjunct -> Bool
+isDiphthong v = v `elem` vowelForm 3 5 : [ vowelForm 2 f | f <- [1..9] ]
