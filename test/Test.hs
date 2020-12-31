@@ -29,6 +29,7 @@ suite = testGroup "test suite" [
       , testCase "split conjuncts" $ do
           splitConjunctsAscii exampleAscii @?= ["m", "a", "l", "Ei", "TR", "ai", "t"]
           splitConjunctsUnicode exampleUnicode @?= ["m", "a", "l", "e\x308i", "t\x327r\x30C", "ai", "t"]
+          splitConjunctsUnicode "ruep\353k" @?= ["r","ue","ps\780k"]
       , testCase "syllable stress" $ do
           (getStresses . conjunctsFromAscii) "ma;lalai" @?= [True, False, False]
           (getStresses . conjunctsFromAscii) "malalai;" @?= [False, False, True]

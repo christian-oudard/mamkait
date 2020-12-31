@@ -235,8 +235,9 @@ splitConjunctsAscii = T.groupBy sameType
       | otherwise  = maybe True isVowel $ phonemeFromAscii c
 
 splitConjunctsUnicode :: T.Text -> [T.Text]
-splitConjunctsUnicode s = map T.concat $ groupBy sameType $ breakCharacters s
+splitConjunctsUnicode s = map T.concat $ groupBy sameType $ breakCharacters s'
   where
+    s' = normalize NFD s
     sameType :: T.Text -> T.Text -> Bool
     sameType a b = isVowel' a == isVowel' b
     isVowel' :: T.Text -> Bool
@@ -260,7 +261,7 @@ conjunctFromUnicode s
   | otherwise  = Right $ VConj ps' hasStress hasGlottal 
   where
     ps = fromUnicode s
-    s' = normalize NFD s -- Normalize to unicode combining accents.
+    s' = normalize NFD s
     s'' = T.concat $ map unstressVowel $ breakCharacters s' -- Remove stress.
     ps' = fromUnicode $ T.replace "\'" "" $ s'' -- Remove glottal stop.
     hasStress = s' /= s''
