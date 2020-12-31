@@ -1,31 +1,65 @@
 module Mamkait.Grammar where
 
-import Data.Tuple (swap)
 import Data.Maybe (fromJust)
 import qualified Data.Text as T
-import Data.Text.ICU (Regex, regex)
-import Data.Text.ICU.Replace (Replace, replace, rtext)
+import Data.Text.ICU (Regex)
+import Data.Text.ICU.Replace (Replace, replace)
 import qualified Data.Bimap as BM
 import Mamkait.Phonology
   ( Conjunct
   , conjunctFromAscii
-  , asciiCodes
+  , removeStress
   , vowelForm
   )
 
 allOf :: (Enum a, Bounded a) => [a]
 allOf = [minBound .. maxBound]
 
+
 -- Formatives
 
-type Formative = (Root, SlotIV, SlotVI)
+type Formative = (SlotII, Root, SlotIV, SlotVI)
 
 composeFormative :: Formative -> [Conjunct]
-composeFormative (Root root, slot4, slot6) = [root, slotIVToVr slot4, slotVIToCa slot6]
+composeFormative (slot2, Root root, slot4, slot6) = [slotIIToVv slot2, root, slotIVToVr slot4, slotVIToCa slot6]
 
 parseFormative :: [Conjunct] -> Maybe Formative
-parseFormative [cr, vr, ca] = (,,) <$> Just (Root cr) <*> vrToSlotIV vr <*> caToSlotVI ca
+parseFormative [vv, cr, vr, ca] = (,,,) <$> vvToSlotII vv <*> Just (Root cr) <*> vrToSlotIV vr <*> caToSlotVI ca
 parseFormative _ = Nothing
+
+
+-- Slot II: V_V - Stem and Version
+
+type SlotII = (Stem, Version)
+
+data Stem = S1 | S2 | S3 | S0
+  deriving (Show, Eq, Ord, Bounded)
+
+data Version
+  = PRC -- Processual
+  | CPT -- Completive
+  deriving (Show, Eq, Ord, Bounded)
+
+slotIIempty :: SlotII
+slotIIempty = (S1, PRC)
+
+vvTable :: BM.Bimap SlotII Conjunct
+vvTable = BM.fromList
+  [ ((S1, PRC), vowelForm 1 1)
+  , ((S1, CPT), vowelForm 1 2)
+  , ((S2, PRC), vowelForm 1 3)
+  , ((S2, CPT), vowelForm 1 5)
+  , ((S3, PRC), vowelForm 1 9)
+  , ((S3, CPT), vowelForm 1 8)
+  , ((S0, PRC), vowelForm 1 7)
+  , ((S0, CPT), vowelForm 1 6)
+  ]
+
+slotIIToVv :: SlotII -> Conjunct
+slotIIToVv slot = fromJust $ BM.lookup slot vvTable
+
+vvToSlotII :: Conjunct -> Maybe SlotII
+vvToSlotII conj = BM.lookupR (removeStress conj) vvTable
 
 
 -- Slot III: Root
@@ -63,7 +97,7 @@ vrTable = BM.fromList
   [ ((STA, BSC, EXS), vowelForm 1 1)
   , ((STA, CTE, EXS), vowelForm 1 2)
   , ((STA, CSV, EXS), vowelForm 1 3)
-  , ((STA, OBJ, EXS), vowelForm 1 5) -- Form 5, "i" not "I".
+  , ((STA, OBJ, EXS), vowelForm 1 5)
   , ((DYN, BSC, EXS), vowelForm 1 9)
   , ((DYN, CTE, EXS), vowelForm 1 8)
   , ((DYN, CSV, EXS), vowelForm 1 7)
@@ -98,7 +132,7 @@ slotIVToVr :: SlotIV -> Conjunct
 slotIVToVr slot = fromJust $ BM.lookup slot vrTable
 
 vrToSlotIV :: Conjunct -> Maybe SlotIV
-vrToSlotIV conj = BM.lookupR conj vrTable
+vrToSlotIV conj = BM.lookupR (removeStress conj) vrTable
 
 
 -- Slot VI: C_A - Configuration, Extension, Affiliation, Perspective, Essence
